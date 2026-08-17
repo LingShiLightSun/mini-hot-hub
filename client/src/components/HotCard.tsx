@@ -46,7 +46,11 @@ export default function HotCard({ platform }: HotCardProps) {
           {items.map((item) => (
             <li
               key={item.rank}
-              className={`hot-card__item ${item.rank <= 3 ? 'is-top' : ''}`}
+              className={
+                item.rank <= 3
+                  ? `hot-card__item is-rank-${item.rank}`
+                  : 'hot-card__item'
+              }
             >
               <span className="hot-card__rank">{item.rank}</span>
               <a

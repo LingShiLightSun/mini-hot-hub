@@ -1,0 +1,29 @@
+/* TabBar 组件样式 — 治愈风（CSS 变量来自 App.css 的 :root） */
+
+.tab-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.tab-bar__item {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.tab-bar__item:hover {
+  color: var(--text);
+}
+
+.tab-bar__item.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 500;
+}

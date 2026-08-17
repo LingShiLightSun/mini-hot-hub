@@ -1,0 +1,81 @@
+/* Home 页面样式 — 治愈风（CSS 变量来自 App.css 的 :root） */
+
+.home {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+/* 顶栏：站名 + 一句话介绍 + 刷新 */
+.home-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.home-brand {
+  min-width: 0;
+}
+.home-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-h);
+  letter-spacing: 0.5px;
+}
+.home-intro {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.home-refresh {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.home-refresh:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.home-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 主区域：桌面 3 列，移动 1 列 */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* 移动端单列 */
+  gap: 20px;
+  align-items: stretch; /* 同行卡片等高 */
+}
+@media (min-width: 720px) {
+  .home-grid {
+    grid-template-columns: repeat(3, 1fr); /* 桌面三列 */
+  }
+}
+
+/* 整页级错误提示 */
+.home-error {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 24px;
+  color: var(--top);
+  font-size: 14px;
+}
+
+/* 页脚 */
+.home-footer {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}

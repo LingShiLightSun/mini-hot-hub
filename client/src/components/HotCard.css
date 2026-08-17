@@ -41,15 +41,47 @@
 }
 
 .hot-card__rank {
-  flex: 0 0 22px;
+  flex: 0 0 24px;
   text-align: center;
   font-size: 14px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--muted); /* 排名 4 及以后：默认灰字列表样式 */
 }
-/* 排名 1~3 视觉强调（AGENTS.md 要求） */
-.hot-card__item.is-top .hot-card__rank {
-  color: var(--top);
+
+/* 排名 1~3：各自不同的强调样式（治愈风三档递进） */
+.hot-card__item.is-rank-1 .hot-card__rank,
+.hot-card__item.is-rank-2 .hot-card__rank,
+.hot-card__item.is-rank-3 .hot-card__rank {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 50%; /* 正圆：宽高相等 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+}
+/* 第 1 名：金色金属（最强） */
+.hot-card__item.is-rank-1 .hot-card__rank {
+  background: linear-gradient(135deg, #f7d774 0%, #e0a82e 100%);
+  color: #5a3d00;
+}
+/* 第 2 名：银色金属 */
+.hot-card__item.is-rank-2 .hot-card__rank {
+  background: linear-gradient(135deg, #e3e6ec 0%, #aab0bd 100%);
+  color: #3a3f4a;
+}
+/* 第 3 名：青铜金属 */
+.hot-card__item.is-rank-3 .hot-card__rank {
+  background: linear-gradient(135deg, #e0a877 0%, #b87333 100%);
+  color: #fff;
+}
+/* 前三名标题略加深，整体更突出 */
+.hot-card__item.is-rank-1 .hot-card__title-link,
+.hot-card__item.is-rank-2 .hot-card__title-link,
+.hot-card__item.is-rank-3 .hot-card__title-link {
+  color: var(--text-h);
 }
 
 .hot-card__title-link {
