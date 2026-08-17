@@ -1,0 +1,56 @@
+[
+  {
+    "source": "weibo",
+    "sourceName": "微博",
+    "listName": "热搜榜",
+    "updatedAt": "2026-08-17T09:00:00+08:00",
+    "items": [
+      { "rank": 1, "title": "国产大模型发布全新多模态能力", "url": "https://s.weibo.com/weibo?q=国产大模型", "heat": "842万" },
+      { "rank": 2, "title": "夏季奥运会中国队再夺三金", "url": "https://s.weibo.com/weibo?q=奥运三金", "heat": "731万" },
+      { "rank": 3, "title": "多地发布高温红色预警", "url": "https://s.weibo.com/weibo?q=高温预警", "heat": "665万" },
+      { "rank": 4, "title": "某科技公司宣布全员涨薪", "url": "https://s.weibo.com/weibo?q=科技公司涨薪", "heat": "598万" },
+      { "rank": 5, "title": "新国产动画电影票房破十亿", "url": "https://s.weibo.com/weibo?q=国产动画票房", "heat": "540万" },
+      { "rank": 6, "title": "高校录取通知书创意设计走红", "url": "https://s.weibo.com/weibo?q=录取通知书", "heat": "487万" },
+      { "rank": 7, "title": "城市夜经济文化节开幕", "url": "https://s.weibo.com/weibo?q=夜经济文化节", "heat": "421万" },
+      { "rank": 8, "title": "研究发现某种食物有助于睡眠", "url": "https://s.weibo.com/weibo?q=食物助眠", "heat": "388万" },
+      { "rank": 9, "title": "新能源车销量再创新高", "url": "https://s.weibo.com/weibo?q=新能源车销量", "heat": "356万" },
+      { "rank": 10, "title": "老字号品牌联名款售罄", "url": "https://s.weibo.com/weibo?q=老字号联名", "heat": "312万" }
+    ]
+  },
+  {
+    "source": "zhihu",
+    "sourceName": "知乎",
+    "listName": "热榜",
+    "updatedAt": "2026-08-17T09:00:00+08:00",
+    "items": [
+      { "rank": 1, "title": "如何评价 2026 年国产大模型的多模态进展？", "url": "https://www.zhihu.com/question/1001", "heat": "1284万热度" },
+      { "rank": 2, "title": "为什么今年夏天特别热？气象专家解答", "url": "https://www.zhihu.com/question/1002", "heat": "962万热度" },
+      { "rank": 3, "title": "新能源车到底值不值得买？真实车主分享", "url": "https://www.zhihu.com/question/1003", "heat": "845万热度" },
+      { "rank": 4, "title": "远程办公三年后，我为什么回到了公司", "url": "https://www.zhihu.com/question/1004", "heat": "778万热度" },
+      { "rank": 5, "title": "有哪些适合夏天做的低成本运动？", "url": "https://www.zhihu.com/question/1005", "heat": "690万热度" },
+      { "rank": 6, "title": "国产动画电影崛起背后有哪些原因？", "url": "https://www.zhihu.com/question/1006", "heat": "623万热度" },
+      { "rank": 7, "title": "如何评价某科技公司全员涨薪的决定？", "url": "https://www.zhihu.com/question/1007", "heat": "567万热度" },
+      { "rank": 8, "title": "学习编程一定要报班吗？自学经验分享", "url": "https://www.zhihu.com/question/1008", "heat": "498万热度" },
+      { "rank": 9, "title": "有哪些能提升幸福感的小家电？", "url": "https://www.zhihu.com/question/1009", "heat": "445万热度" },
+      { "rank": 10, "title": "为什么老字号联名越来越火？", "url": "https://www.zhihu.com/question/1010", "heat": "401万热度" }
+    ]
+  },
+  {
+    "source": "bilibili",
+    "sourceName": "哔哩哔哩",
+    "listName": "热搜",
+    "updatedAt": "2026-08-17T09:00:00+08:00",
+    "items": [
+      { "rank": 1, "title": "【4K】国产大模型多模态实测对比", "url": "https://www.bilibili.com/search?keyword=大模型实测", "heat": "综合 98万" },
+      { "rank": 2, "title": "一口气看完今年夏季运动会高光时刻", "url": "https://www.bilibili.com/search?keyword=运动会高光", "heat": "综合 87万" },
+      { "rank": 3, "title": "UP主实测：40度高温下户外装备测评", "url": "https://www.bilibili.com/search?keyword=高温装备测评", "heat": "综合 79万" },
+      { "rank": 4, "title": "国产动画电影幕后制作纪录片", "url": "https://www.bilibili.com/search?keyword=动画幕后", "heat": "综合 72万" },
+      { "rank": 5, "title": "新能源车续航实测横评来了", "url": "https://www.bilibili.com/search?keyword=新能源横评", "heat": "综合 66万" },
+      { "rank": 6, "title": "十分钟学会夏天低成本居家运动", "url": "https://www.bilibili.com/search?keyword=居家运动", "heat": "综合 58万" },
+      { "rank": 7, "title": "科技公司涨薪后员工真实反应", "url": "https://www.bilibili.com/search?keyword=涨薪反应", "heat": "综合 51万" },
+      { "rank": 8, "title": "老字号联名款开箱试吃", "url": "https://www.bilibili.com/search?keyword=老字号开箱", "heat": "综合 47万" },
+      { "rank": 9, "title": "自学编程一年后的成果展示", "url": "https://www.bilibili.com/search?keyword=自学编程", "heat": "综合 42万" },
+      { "rank": 10, "title": "提升幸福感小家电 TOP5", "url": "https://www.bilibili.com/search?keyword=幸福感小家电", "heat": "综合 38万" }
+    ]
+  }
+]

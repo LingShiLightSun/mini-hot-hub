@@ -1,0 +1,28 @@
+/* 全局重置 + 基础排版（治愈风基调，后续拆到 styles/ 统一管理） */
+:root {
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  line-height: 1.6;
+  color-scheme: light;
+  background: #faf8f5;
+  color: #4a4458;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+}
+
+a {
+  color: inherit;
+}

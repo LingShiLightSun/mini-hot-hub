@@ -1,0 +1,181 @@
+/* 治愈风基础变量 — 后续 styles/ 统一管理，MVP 先放这里 */
+:root {
+  --bg: #faf8f5;
+  --card-bg: #ffffff;
+  --text: #4a4458;
+  --text-h: #2b2740;
+  --muted: #9b94ad;
+  --border: #ece8f0;
+  --accent: #8c7ae6;
+  --accent-soft: rgba(140, 122, 230, 0.12);
+  --top: #e8826b;
+  --radius: 14px;
+  --shadow: 0 6px 20px rgba(120, 110, 160, 0.08);
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+/* 顶部标题栏 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.logo {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-h);
+  letter-spacing: 0.5px;
+}
+.refresh-btn {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.refresh-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 平台 Tab */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.tab {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* 卡片区 */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+.card-time {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* 热榜列表 */
+.hot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.hot-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.hot-item:last-child {
+  border-bottom: none;
+}
+.rank {
+  flex: 0 0 22px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.rank-top .rank {
+  color: var(--top);
+}
+.title {
+  flex: 1;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.title:hover {
+  color: var(--accent);
+}
+.heat {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* 异常态 */
+.card-error,
+.error {
+  color: var(--top);
+  font-size: 14px;
+}
+.error {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 24px;
+}
+
+/* 页脚 */
+.footer {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* 移动端单列 */
+@media (max-width: 640px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
