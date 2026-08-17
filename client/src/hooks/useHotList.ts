@@ -1,7 +1,7 @@
-// 热榜数据 Hook — 把「请求状态 + 500ms 模拟延迟 + 三态」收口在此
-// MVP 阶段仍读 mock/hot.json，后续接真实后端时只需改 fetchHot 即可
+// 热榜数据 Hook — 把「请求状态 + 加载延迟 + 三态」收口在此
+// 数据来源由 api/hot.ts 决定：微博走后端 /api/hot/weibo，知乎 B 站走 Mock
 import { useCallback, useEffect, useState } from 'react'
-import { fetchHot } from '../api/fetchHot'
+import { fetchAllHot } from '../api/hot'
 import type { HotPlatform } from '../types/hot'
 
 // 模拟网络延迟（毫秒），仅 MVP mock 阶段使用
@@ -24,9 +24,9 @@ export function useHotList(): UseHotListResult {
     setLoading(true)
     setError(null)
     try {
-      // 模拟 500ms 网络延迟
+      // 模拟 500ms 网络延迟（保留三态 loading 体验；接入真实后端后亦可按需移除）
       await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY))
-      const data = await fetchHot()
+      const data = await fetchAllHot()
       setPlatforms(data)
     } catch {
       setError('数据加载失败，请稍后重试')
