@@ -79,3 +79,11 @@
   font-size: 12px;
   color: var(--muted);
 }
+.home-footer__line {
+  margin: 0;
+}
+.home-footer__sub {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.8;
+}

@@ -1,41 +1,29 @@
-import { useEffect, useState, useCallback } from 'react'
-import { fetchHot } from '../api/fetchHot'
-import type { HotPlatform } from '../types/hot'
+import { useState } from 'react'
+import type { Source } from '../types/hot'
 import HotCard from '../components/HotCard'
 import TabBar, { type Tab, type TabItem } from '../components/TabBar'
+import { useHotList } from '../hooks/useHotList'
 import './Home.css'
 
+/** 固定平台列表：保证加载/出错时也有稳定的 3 张卡片与标签 */
+const SOURCES: { source: Source; sourceName: string }[] = [
+  { source: 'weibo', sourceName: '微博' },
+  { source: 'zhihu', sourceName: '知乎' },
+  { source: 'bilibili', sourceName: 'B站' },
+]
+
 export default function Home() {
-  const [platforms, setPlatforms] = useState<HotPlatform[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { platforms, loading, error, retry } = useHotList()
   const [tab, setTab] = useState<Tab>('all')
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await fetchHot()
-      setPlatforms(data)
-    } catch {
-      setError('数据加载失败，请稍后重试')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
-  const visible =
-    tab === 'all' ? platforms : platforms.filter((p) => p.source === tab)
-
-  // 标签列表从 platforms 派生：加一个新平台只需在数据源加一份，标签自动多出
   const tabs: TabItem[] = [
     { key: 'all', label: '全部' },
-    ...platforms.map((p) => ({ key: p.source, label: p.sourceName })),
+    ...SOURCES.map((s) => ({ key: s.source, label: s.sourceName })),
   ]
+
+  const visibleSources =
+    tab === 'all' ? SOURCES : SOURCES.filter((s) => s.source === tab)
+  const platformMap = new Map(platforms.map((p) => [p.source, p]))
 
   return (
     <div className="home">
@@ -47,7 +35,7 @@ export default function Home() {
             一个页面看遍各平台当下最热的事件，省去到处找热度的时间。
           </p>
         </div>
-        <button className="home-refresh" onClick={load} disabled={loading}>
+        <button className="home-refresh" onClick={retry} disabled={loading}>
           {loading ? '刷新中…' : '刷新'}
         </button>
       </header>
@@ -55,17 +43,32 @@ export default function Home() {
       {/* 平台 Tab 筛选 */}
       <TabBar tabs={tabs} active={tab} onChange={setTab} />
 
-      {/* 主区域：平台卡片网格 */}
+      {/* 主区域：按三态契约渲染每张 HotCard */}
       <main className="home-grid">
-        {error && <p className="home-error">{error}</p>}
-        {visible.map((p) => (
-          <HotCard key={p.source} platform={p} />
-        ))}
+        {visibleSources.map((s) => {
+          const p = platformMap.get(s.source)
+          const cardError = error || (p?.error ? (p.message ?? '该平台数据获取失败') : null)
+          return (
+            <HotCard
+              key={s.source}
+              loading={loading}
+              error={cardError}
+              data={p && !p.error ? p : null}
+              sourceName={s.sourceName}
+              onRetry={retry}
+            />
+          )
+        })}
       </main>
 
-      {/* 页脚：学习项目 / 非商用说明 */}
+      {/* 页脚：学习项目 / 非商用 / 数据来源 / 免责声明 */}
       <footer className="home-footer">
-        学习项目 · 非商用 · 数据来源：各平台公开热榜（当前为 Mock）
+        <p className="home-footer__line">
+          学习项目 · 仅供学习交流 · 非商用
+        </p>
+        <p className="home-footer__line home-footer__sub">
+          数据来自各平台公开热榜，版权归原平台所有，本页面仅作展示用途（当前为 Mock 数据）
+        </p>
       </footer>
     </div>
   )
