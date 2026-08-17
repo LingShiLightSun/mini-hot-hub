@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { fetchHot } from './api/fetchHot'
 import type { HotPlatform, Source } from './types/hot'
+import HotCard from './components/HotCard'
 import './App.css'
 
 type Tab = 'all' | Source
@@ -62,29 +63,7 @@ function App() {
       <main className="cards">
         {error && <p className="error">{error}</p>}
         {visible.map((p) => (
-          <section className="card" key={p.source}>
-            <div className="card-head">
-              <span className="card-title">{p.sourceName} · {p.listName}</span>
-              <span className="card-time">
-                更新于 {new Date(p.updatedAt).toLocaleString('zh-CN')}
-              </span>
-            </div>
-            {p.error ? (
-              <p className="card-error">{p.message ?? '该平台数据获取失败'}</p>
-            ) : (
-              <ol className="hot-list">
-                {p.items.map((item) => (
-                  <li key={item.rank} className={`hot-item rank-${item.rank <= 3 ? 'top' : 'normal'}`}>
-                    <span className="rank">{item.rank}</span>
-                    <a className="title" href={item.url} target="_blank" rel="noreferrer">
-                      {item.title}
-                    </a>
-                    {item.heat && <span className="heat">{item.heat}</span>}
-                  </li>
-                ))}
-              </ol>
-            )}
-          </section>
+          <HotCard key={p.source} platform={p} />
         ))}
       </main>
 

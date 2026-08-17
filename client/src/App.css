@@ -77,92 +77,21 @@
   font-weight: 500;
 }
 
-/* 卡片区 */
+/* 卡片区：网格容器（卡片视觉在 components/HotCard.css） */
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
-}
-.card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  box-shadow: var(--shadow);
-}
-.card-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  gap: 8px;
-}
-.card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-h);
-}
-.card-time {
-  font-size: 12px;
-  color: var(--muted);
-  white-space: nowrap;
+  align-items: stretch; /* 同行卡片等高 */
 }
 
-/* 热榜列表 */
-.hot-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.hot-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 4px;
-  border-bottom: 1px solid var(--border);
-}
-.hot-item:last-child {
-  border-bottom: none;
-}
-.rank {
-  flex: 0 0 22px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--muted);
-}
-.rank-top .rank {
-  color: var(--top);
-}
-.title {
-  flex: 1;
-  color: var(--text);
-  text-decoration: none;
-  font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: color 0.15s;
-}
-.title:hover {
-  color: var(--accent);
-}
-.heat {
-  font-size: 12px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-/* 异常态 */
-.card-error,
-.error {
-  color: var(--top);
-  font-size: 14px;
-}
+/* 异常态：整页级错误提示 */
 .error {
   grid-column: 1 / -1;
   text-align: center;
   padding: 24px;
+  color: var(--top);
+  font-size: 14px;
 }
 
 /* 页脚 */
