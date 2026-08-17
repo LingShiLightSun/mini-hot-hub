@@ -1,16 +1,9 @@
 import { useState } from 'react'
-import type { Source } from '../types/hot'
 import HotCard from '../components/HotCard'
 import TabBar, { type Tab, type TabItem } from '../components/TabBar'
 import { useHotList } from '../hooks/useHotList'
+import { PLATFORM_SOURCES } from '../api/hot'
 import './Home.css'
-
-/** 固定平台列表：保证加载/出错时也有稳定的 3 张卡片与标签 */
-const SOURCES: { source: Source; sourceName: string }[] = [
-  { source: 'weibo', sourceName: '微博' },
-  { source: 'zhihu', sourceName: '知乎' },
-  { source: 'bilibili', sourceName: 'B站' },
-]
 
 export default function Home() {
   const { platforms, loading, error, retry } = useHotList()
@@ -18,11 +11,11 @@ export default function Home() {
 
   const tabs: TabItem[] = [
     { key: 'all', label: '全部' },
-    ...SOURCES.map((s) => ({ key: s.source, label: s.sourceName })),
+    ...PLATFORM_SOURCES.map((s) => ({ key: s.source, label: s.sourceName })),
   ]
 
   const visibleSources =
-    tab === 'all' ? SOURCES : SOURCES.filter((s) => s.source === tab)
+    tab === 'all' ? PLATFORM_SOURCES : PLATFORM_SOURCES.filter((s) => s.source === tab)
   const platformMap = new Map(platforms.map((p) => [p.source, p]))
 
   return (

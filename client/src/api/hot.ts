@@ -27,6 +27,12 @@ const SOURCE_LABELS: Record<Source, string> = {
   bilibili: 'B站',
 }
 
+// 平台注册表：由 BACKEND_ROUTES + SOURCE_LABELS 派生的「有哪些平台」单一数据源。
+// 首页 Tab、卡片列表、逐平台拉取都从这里取；新增平台只改上面的 BACKEND_ROUTES 即可。
+export const PLATFORM_SOURCES: { source: Source; sourceName: string }[] = (
+  Object.keys(BACKEND_ROUTES) as Source[]
+).map((source) => ({ source, sourceName: SOURCE_LABELS[source] }))
+
 // 构造一个「加载失败」的平台对象，交给 HotCard 以错误态显现
 function toErrorPlatform(source: Source, message: string): HotPlatform {
   return {
@@ -65,7 +71,7 @@ export async function fetchHotPlatform(source: Source): Promise<HotPlatform> {
 /**
  * 拉取全部平台热榜。
  * 生产环境（已配 VITE_API_BASE）优先尝试后端聚合接口 GET /api/hot；
- * 其余情况逐平台调用 fetchHotPlatform（开发期 weibo 走后端，zhihu / bilibili 因未接入而显错误态）。
+ * 其余情况逐平台调用 fetchHotPlatform（三平台均走后端，任一失败以错误态呈现）。
  */
 export async function fetchAllHot(): Promise<HotPlatform[]> {
   // 1) 生产环境优先尝试后端聚合接口
@@ -84,7 +90,6 @@ export async function fetchAllHot(): Promise<HotPlatform[]> {
     }
   }
 
-  // 2) 逐平台拉取：weibo 走后端；未接入的 zhihu / bilibili 显错误态
-  const sources: Source[] = ['weibo', 'zhihu', 'bilibili']
-  return Promise.all(sources.map((s) => fetchHotPlatform(s)))
+  // 2) 逐平台拉取：三平台均走后端，任一失败以错误态呈现
+  return Promise.all(PLATFORM_SOURCES.map((s) => fetchHotPlatform(s.source)))
 }

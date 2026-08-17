@@ -1,5 +1,5 @@
 // 热榜数据 Hook — 把「请求状态 + 加载延迟 + 三态」收口在此
-// 数据来源由 api/hot.ts 决定：微博走后端 /api/hot/weibo，知乎 B 站走 Mock
+// 数据来源由 api/hot.ts 决定：三平台均走后端（/api/hot/:source），任一失败以错误态呈现
 import { useCallback, useEffect, useState } from 'react'
 import { fetchAllHot } from '../api/hot'
 import type { HotPlatform } from '../types/hot'
