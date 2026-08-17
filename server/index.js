@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import { getCache, setCache } from './utils/cache.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -78,13 +79,38 @@ function buildPlatform(key) {
 }
 
 // 单平台热搜：/api/hot/:source，无效 source 返回 404
+// 缓存策略：先查缓存，命中直接返回；未命中则生成 Mock 并写入缓存。
+// 支持 ?refresh=1 强制跳过缓存（仅开发用）。
 app.get('/api/hot/:source', (req, res) => {
   const { source } = req.params
   if (!PLATFORMS[source]) {
     res.status(404).json({ error: `未知 platform：${source}` })
     return
   }
-  res.json(buildPlatform(source))
+
+  const cacheKey = `hot:${source}`
+  const forceRefresh = req.query.refresh === '1'
+
+  // 1) 非强制刷新时先查缓存
+  if (!forceRefresh) {
+    const cached = getCache(cacheKey)
+    if (cached) {
+      console.log(`[cache hit] GET /api/hot/${source}`)
+      res.json(cached)
+      return
+    }
+  }
+
+  // 2) 未命中（或强制刷新）：生成 Mock 并写入缓存
+  const data = buildPlatform(source)
+  setCache(cacheKey, data)
+
+  if (forceRefresh) {
+    console.log(`[cache skip] GET /api/hot/${source} (refresh=1, regenerated)`)
+  } else {
+    console.log(`[cache miss] GET /api/hot/${source} (generated & cached)`)
+  }
+  res.json(data)
 })
 
 // 聚合接口：返回全部三个平台
