@@ -1,6 +1,16 @@
 import express from 'express'
 import cors from 'cors'
 import { getCache, setCache } from './utils/cache.js'
+import { fetchWeiboHot } from './services/weibo.js'
+import { fetchZhihuHot } from './services/zhihu.js'
+import { fetchBilibiliHot } from './services/bilibili.js'
+
+// 已接入真实抓取的平台 → 抓取函数；新增平台只需在此加一行
+const REAL_FETCHERS = {
+  weibo: fetchWeiboHot,
+  zhihu: fetchZhihuHot,
+  bilibili: fetchBilibiliHot,
+}
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -78,46 +88,85 @@ function buildPlatform(key) {
   }
 }
 
-// 单平台热搜：/api/hot/:source，无效 source 返回 404
-// 缓存策略：先查缓存，命中直接返回；未命中则生成 Mock 并写入缓存。
-// 支持 ?refresh=1 强制跳过缓存（仅开发用）。
-app.get('/api/hot/:source', (req, res) => {
-  const { source } = req.params
-  if (!PLATFORMS[source]) {
-    res.status(404).json({ error: `未知 platform：${source}` })
-    return
-  }
-
+// 抽取「单平台数据获取」为共享函数，供单平台路由与聚合路由复用。
+// 行为：先查缓存（命中直接返回）→ 未命中则生成；接入真实抓取的平台走 REAL_FETCHERS，
+// 未接入的（bilibili）走 Mock；真实抓取失败时返回 error 态（不写缓存，便于下次重试）。
+// 该函数永不 reject，调用方无需再 try/catch。
+async function getPlatformData(source, forceRefresh = false) {
+  const meta = PLATFORMS[source]
   const cacheKey = `hot:${source}`
-  const forceRefresh = req.query.refresh === '1'
 
   // 1) 非强制刷新时先查缓存
   if (!forceRefresh) {
     const cached = getCache(cacheKey)
     if (cached) {
       console.log(`[cache hit] GET /api/hot/${source}`)
-      res.json(cached)
-      return
+      return cached
     }
   }
 
-  // 2) 未命中（或强制刷新）：生成 Mock 并写入缓存
-  const data = buildPlatform(source)
-  setCache(cacheKey, data)
+  // 2) 未命中（或强制刷新）：生成数据
+  const realFetcher = REAL_FETCHERS[source]
+  let data
+  if (realFetcher) {
+    try {
+      const items = await realFetcher()
+      data = {
+        source: meta.source,
+        sourceName: meta.sourceName,
+        listName: meta.listName,
+        updatedAt: new Date().toISOString(),
+        items,
+      }
+    } catch (err) {
+      // 抓取失败：返回友好错误态（不写入缓存，便于下次请求重新尝试）
+      console.log(`[${source} fetch failed] ${err.message}`)
+      return {
+        source: meta.source,
+        sourceName: meta.sourceName,
+        listName: meta.listName,
+        updatedAt: new Date().toISOString(),
+        error: true,
+        items: [],
+        message: `${meta.sourceName}热榜暂时获取失败，请稍后点击重试`,
+      }
+    }
+  } else {
+    // 未接入真实抓取的平台仍使用 Mock 数据（目前三平台均已接入，此分支作为新增平台的兜底）
+    data = buildPlatform(source)
+  }
 
+  setCache(cacheKey, data)
   if (forceRefresh) {
     console.log(`[cache skip] GET /api/hot/${source} (refresh=1, regenerated)`)
   } else {
     console.log(`[cache miss] GET /api/hot/${source} (generated & cached)`)
   }
+  return data
+}
+
+// 单平台热搜：/api/hot/:source，无效 source 返回 404
+// 缓存策略：先查缓存，命中直接返回；未命中则生成数据并写入缓存。
+// 支持 ?refresh=1 强制跳过缓存（仅开发用）。
+// 微博 / 知乎 / 哔哩哔哩 均走真实抓取（fetchWeiboHot / fetchZhihuHot / fetchBilibiliHot）；抓取失败时返回 error 态且不缓存。
+app.get('/api/hot/:source', async (req, res) => {
+  const { source } = req.params
+  if (!PLATFORMS[source]) {
+    res.status(404).json({ error: `未知 platform：${source}` })
+    return
+  }
+  const data = await getPlatformData(source, req.query.refresh === '1')
   res.json(data)
 })
 
-// 聚合接口：返回全部三个平台
-app.get('/api/hot', (_req, res) => {
-  res.json({
-    platforms: Object.keys(PLATFORMS).map(buildPlatform),
-  })
+// 聚合接口：一次性返回全部平台。
+// 逐个调用 getPlatformData（互不阻塞、任一失败不影响其他）；真实抓取失败的平台带 error: true，
+// 成功平台正常返回。整包始终 HTTP 200，不整体报错（部分失败隔离）。
+app.get('/api/hot', async (_req, res) => {
+  const platforms = await Promise.all(
+    Object.keys(PLATFORMS).map((key) => getPlatformData(key, false)),
+  )
+  res.json({ platforms })
 })
 
 // 健康检查

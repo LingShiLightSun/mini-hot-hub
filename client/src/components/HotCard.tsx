@@ -14,26 +14,36 @@ interface HotCardProps {
   sourceName?: string
 }
 
-/** 把 ISO 时间格式化为「更新于 今天 09:00」这类友好文本 */
+/**
+ * 把 ISO 时间格式化为相对友好的「更新于 X 分钟前」文本。
+ * 服务端 updatedAt 在缓存期内固定不变，因此这段相对时间也保持稳定——属正常现象。
+ */
 function formatUpdatedAt(iso: string): string {
   const d = new Date(iso)
   if (isNaN(d.getTime())) return iso
 
+  const diffSec = Math.max(0, (Date.now() - d.getTime()) / 1000)
+
+  if (diffSec < 60) return '刚刚更新'
+
   const pad = (n: number) => String(n).padStart(2, '0')
-  const hh = pad(d.getHours())
-  const mm = pad(d.getMinutes())
-  const now = new Date()
 
-  const sameDay =
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
+  if (diffSec < 3600) {
+    return `更新于 ${Math.floor(diffSec / 60)} 分钟前`
+  }
 
-  if (sameDay) return `更新于 今天 ${hh}:${mm}`
+  if (diffSec < 86400) {
+    return `更新于 ${Math.floor(diffSec / 3600)} 小时前`
+  }
 
+  if (diffSec < 86400 * 30) {
+    return `更新于 ${Math.floor(diffSec / 86400)} 天前`
+  }
+
+  // 超过一个月回退绝对日期
   const MM = pad(d.getMonth() + 1)
   const DD = pad(d.getDate())
-  return `更新于 ${MM}-${DD} ${hh}:${mm}`
+  return `更新于 ${MM}-${DD}`
 }
 
 /** 加载中的骨架屏占位 */

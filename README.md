@@ -1,6 +1,6 @@
 # 迷你今日热榜（mini-hot-hub）
 
-一个用于学习的迷你项目：在一个页面里聚合展示**微博 / 知乎 / B 站**的当下热门榜单。前端 React + TypeScript + Vite，后端 Node.js + Express 提供热榜接口（当前为 Mock 数据，仅供学习交流、非商用）。
+一个用于学习的迷你项目：在一个页面里聚合展示**微博 / 知乎 / B 站**的当下热门榜单。前端 React + TypeScript + Vite，后端 Node.js + Express 提供热榜接口（热榜数据通过第三方聚合接口实时获取，仅供学习交流、非商用）。
 
 ---
 
@@ -161,12 +161,68 @@ Vite 在 5173 被占用时会**自动顺延**到 5174、5175…… 页面仍能�
 
 ---
 
+## 数据来源说明
+
+### 各平台数据获取方式（JSON 接口）
+
+三个平台均通过**后端 Node.js 内置 `fetch`** 请求第三方聚合接口 [uapis.cn](https://uapis.cn) 的公开热榜 JSON，不做 HTML 解析：
+
+| 平台 | 接口地址（默认） |
+| --- | --- |
+| 微博 | `https://uapis.cn/api/v1/misc/hotboard?type=weibo` |
+| 知乎 | `https://uapis.cn/api/v1/misc/hotboard?type=zhihu` |
+| B 站 | `https://uapis.cn/api/v1/misc/hotboard?type=bilibili` |
+
+后端各自的服务文件把响应中的 `list[]` 逐条映射为统一结构 `{ rank, title, heat, url }`：
+
+- `server/services/weibo.js` → `fetchWeiboHot()`
+- `server/services/zhihu.js` → `fetchZhihuHot()`
+- `server/services/bilibili.js` → `fetchBilibiliHot()`
+
+对外暴露的接口路由：`GET /api/hot/:source`（单平台）、`GET /api/hot`（三平台聚合）。
+
+如需更换数据源（例如某个接口失效），可通过环境变量覆盖，**无需改动代码**：
+
+```bash
+WEIBO_API_URL='https://另一个兼容接口/weibo' npm run dev
+# 同理：ZHIHU_API_URL / BILIBILI_API_URL
+```
+
+### 更新频率（缓存 TTL）
+
+- 后端对每次抓取结果做**进程内缓存**，缓存 key 为 `hot:<平台>`，**各平台缓存相互独立**（刷新一个平台不会让其他平台缓存失效）。
+- 默认 TTL 为 **600 秒（10 分钟）**，取自环境变量 `CACHE_TTL`（单位：秒）。例如改为 5 分钟：
+
+  ```bash
+  CACHE_TTL=300 npm run dev
+  ```
+
+- 因此热榜最多每 10 分钟（或你设置的 TTL）自动刷新一次。
+- 调试时可在请求后追加 `?refresh=1` **强制跳过缓存**立即重新抓取：
+
+  ```bash
+  curl "http://localhost:3001/api/hot/weibo?refresh=1"
+  ```
+
+### 学习项目免责声明
+
+- 本项目为**个人学习 / 教学演示用途**搭建，**非商业项目**，不代表微博 / 知乎 / B 站任何官方。
+- 热榜数据来自第三方公开聚合接口（uapis.cn），**并非平台官方 API**，不保证数据的实时性、完整性与长期可用性；接口或字段可能随时变动。
+- 项目遵循**严格不回退**原则：当某平台抓取失败时，页面会如实显示错误态并提供重试，**不会**用本地写死的 Mock 数据「假装成功」。
+- 请勿将本项目用于商业用途、大规模抓取或任何可能违反第三方服务条款的行为。
+
+---
+
 ## 环境变量（后端）
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
 | `PORT` | `3001` | 后端监听端口 |
 | `CLIENT_ORIGIN` | `http://localhost:5173` | 允许跨域访问的前端域名（CORS） |
+| `CACHE_TTL` | `600` | 热榜缓存存活时间（秒），默认 600 即 10 分钟 |
+| `WEIBO_API_URL` | `https://uapis.cn/api/v1/misc/hotboard?type=weibo` | 微博数据源，可替换为其他兼容接口 |
+| `ZHIHU_API_URL` | `https://uapis.cn/api/v1/misc/hotboard?type=zhihu` | 知乎数据源 |
+| `BILIBILI_API_URL` | `https://uapis.cn/api/v1/misc/hotboard?type=bilibili` | B 站数据源 |
 
 ## 生产构建（简要）
 
