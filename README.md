@@ -2,6 +2,8 @@
 
 一个用于学习的迷你项目：在一个页面里聚合展示**微博 / 知乎 / B 站**的当下热门榜单。前端 React + TypeScript + Vite，后端 Node.js + Express 提供热榜接口（热榜数据通过第三方聚合接口实时获取，仅供学习交流、非商用）。
 
+> 📌 **产品定位 / 设计灵魂**：本站核心理念是「将心注入、将爱注入」——即使只是收集热点，也希望每个细节透出温度。设计原则、视觉气质、功能边界见 **[`2.PRD.md`](./2.PRD.md)**；任务进度见 [`TODO.md`](./TODO.md)。
+
 ---
 
 ## 目录结构
@@ -20,7 +22,7 @@ mini-hot-hub/
     └── index.js               # GET /api/hot、/api/hot/:source 等
 ```
 
-- 前端开发端口：**5173**
+- 前端开发端口：**5173**（本机调试，仅 `localhost`）/ **5174**（手机真机调试，需 `--host` 启动）
 - 后端 API 端口：**3001**
 
 ---
@@ -98,6 +100,55 @@ curl http://localhost:3001/api/hot/weibo    # 返回微博热榜
 ```
 
 - 前端页面里的请求走的是 `http://localhost:5173/api/...`（由 Vite 转发到 3001），而不是直接访问 3001。
+
+---
+
+## 真机调试（手机访问）
+
+默认情况下 Vite 只监听 `localhost`，所以手机**无法直接打开 `http://localhost:5173`**（`localhost` 指的是手机自己，不是你的电脑）。要让手机能访问页面，需要**再起一个监听 `0.0.0.0` 的 Vite 实例**。本项目约定用 **5174 端口专供手机观看**，你自己的电脑仍用 5173 调试，两者互不干扰、可同时运行。
+
+### 启动流程
+
+1. **后端 3001 保持运行**（同「启动」一节的方式一·终端 A）。手机端的数据最终也是走这个后端。
+
+2. **在 `client/` 目录再起一个 Vite 实例，监听 5174 并对外暴露：**
+
+   ```bash
+   cd client
+   npm run dev -- --host --port 5174
+   ```
+
+   - `--host`：让 Vite 监听 `0.0.0.0`（所有网卡），而不只是 `localhost`，手机才能连进来。
+   - `--port 5174`：用与本地 5173 不同的端口，避免冲突；也可换成其它空闲端口。
+   - 想让它后台运行（不占用终端），可在命令后加 `&`（Git Bash）或用 `Start-Process`（PowerShell），或干脆另开一个终端专门跑它。
+
+3. **查本机局域网 IPv4 地址：**
+
+   ```bash
+   ipconfig
+   ```
+
+   在输出里找「IPv4 地址」，形如 `192.168.x.x` 或 `10.x.x.x`（例如 `192.168.30.186`）。
+
+4. **手机与电脑连同一个 Wi-Fi**，在手机浏览器打开：
+
+   ```
+   http://<上一步的IP>:5174
+   ```
+
+   例如 `http://192.168.30.186:5174`。手机即可像在电脑上一样看到三张热榜卡片。
+
+5. **（Windows）放行防火墙：** 首次访问若连不上，多半是 Windows 防火墙拦截了 `node`/`vite` 的入站连接。在弹窗里勾选「专用网络」允许；或到「Windows Defender 防火墙 → 允许应用通过防火墙」手动放行 Node.js。
+
+### 为什么不会触发跨域（CORS）
+
+手机访问的是 Vite（5174），页面里对 `/api/...` 的请求由 **Vite 代理在服务端转发到 3001**，从浏览器视角全程都是 `192.168.x.x:5174` 这个「同域」，因此**不触发 CORS**，无需修改后端的 `CLIENT_ORIGIN`（它仍锁 `localhost:5173` 即可）。
+
+### 常见坑
+
+- **手机显示「拒绝连接 / ERR_CONNECTION_REFUSED」**：说明 5174 那个 Vite 进程已退出（被关掉、终端关闭或超时）。回到第 2 步重新启动即可，**后端 3001 是否正常与此无关**。
+- **换网络 / IP 变了**：手机访问的 IP 是电脑当前局域网 IP，电脑换 Wi-Fi 或重连后 IP 可能变化，用 `ipconfig` 重新查一次即可。
+- **5173 与 5174 是两份独立进程**：改了前端代码两者都会热更新；停掉其中一个不影响另一个。
 
 ---
 
@@ -215,7 +266,7 @@ WEIBO_API_URL='https://另一个兼容接口/weibo' npm run dev
   CACHE_TTL=300 npm run dev
   ```
 
-- 因此热榜最多每 10 分钟（或你设置的 TTL）自动刷新一次。
+- 因此热榜最多每 10 分钟（或你设置的 TTL）自动刷新一次。前端页脚会动态显示「更新频率约 N 分钟」，其中 N = 当前 `cacheTtl / 60` 四舍五入，与后端 `CACHE_TTL` 自动一致。
 - 调试时可在请求后追加 `?refresh=1` **强制跳过缓存**立即重新抓取：
 
   ```bash
@@ -241,6 +292,72 @@ WEIBO_API_URL='https://另一个兼容接口/weibo' npm run dev
 | `WEIBO_API_URL` | `https://uapis.cn/api/v1/misc/hotboard?type=weibo` | 微博数据源，可替换为其他兼容接口 |
 | `ZHIHU_API_URL` | `https://uapis.cn/api/v1/misc/hotboard?type=zhihu` | 知乎数据源 |
 | `BILIBILI_API_URL` | `https://uapis.cn/api/v1/misc/hotboard?type=bilibili` | B 站数据源 |
+| `MOCK_FAIL_WEIBO` / `MOCK_FAIL_ZHIHU` / `MOCK_FAIL_BILIBILI` | 未设置 | 开发期故障注入：设为 `1` 可强制让对应平台「抓取失败」，用于验证前端 error 卡片。仅本地调试用，生产环境切勿设置。与「严格不回退」不冲突（它强制报错而非回退假数据）。**各终端正确写法见下方「测试错误态」节** |
+
+---
+
+## 测试错误态（开发期故障注入）
+
+前端有一张「错误卡片」（红框 + 提示文案 + 重试按钮），在**某个平台抓取失败时**展示。为验证它的样式与单平台失败隔离，后端提供了开发期故障注入开关：启动时设置 `MOCK_FAIL_<平台>=1`，即可让指定平台**像真的挂掉一样**返回 error 态——它是「强制报错」，**不是**「回退假数据」，与项目「严格不回退」原则一致。
+
+### 开关一览
+
+| 想模拟失败的平台 | 启动开关 |
+| --- | --- |
+| 微博 | `MOCK_FAIL_WEIBO=1` |
+| 知乎 | `MOCK_FAIL_ZHIHU=1` |
+| B 站 | `MOCK_FAIL_BILIBILI=1` |
+
+### 标准测试步骤（最短链路）
+
+1. **停掉当前后端**（避免旧进程 / 旧缓存干扰）：
+   - Windows：`netstat -ano | findstr :3001` → `taskkill /PID <PID> /F`
+   - macOS / Linux：`lsof -i :3001` → `kill -9 <PID>`
+2. **带开关重启后端**（见下方「各终端正确写法」）。
+3. **验证注入生效**（两种任选其一）：
+   - 命令行：`curl http://localhost:3001/api/hot/weibo`，应返回带 `"error": true` 的 JSON；
+   - 浏览器：硬刷 http://localhost:5173（`Ctrl+Shift+R`），指定平台卡片应变红。
+4. **验证单平台失败隔离**（对应 TESTING #5）：指定平台红卡，其他两平台**仍显示真实数据**。
+5. **验证卡片「重试」按钮**：点红卡的「点击重试」→ 按钮变「重试中…」且只重载那一张卡，其他卡不动；因开关仍开着，重试后仍是错误态（符合预期）。
+6. **恢复**：关掉开关、重启后端，再点重试 → 指定平台恢复真实数据。
+
+### 各终端正确写法（⚠️ 关键）
+
+开启关建的写法**因终端而异**，写错会让开关「看起来设了但实际没生效」：
+
+- **Git Bash / WSL / macOS / Linux**：
+  ```bash
+  MOCK_FAIL_WEIBO=1 npm run dev
+  # 或 MOCK_FAIL_WEIBO=1 node --watch index.js
+  ```
+- **Windows PowerShell**：
+  ```powershell
+  $env:MOCK_FAIL_WEIBO="1"; npm run dev
+  ```
+  必须在一行内用分号分隔；或先单独 `$env:MOCK_FAIL_WEIBO="1"` 再 `npm run dev`。
+- **Windows cmd（推荐用引号写法）**：
+  ```cmd
+  set "MOCK_FAIL_WEIBO=1" && node --watch index.js
+  ```
+
+> ⚠️ **cmd 尾随空格陷阱**：`set MOCK_FAIL_WEIBO=1 && node ...`（等号后、行尾有空格）会把**空格一起存进变量值**（变成 `"1 "`），而代码判断 `=== '1'` 永远 false，开关「悄悄失效」。**务必加引号 `set "X=1"`**，或依赖代码侧 `.trim()` 兜底（本项目已对 env 值 `.trim()`，但引号写法更保险）。
+>
+> ⚠️ **不要用 `npm run dev` 传自定义 env（Windows）**：npm 在 Windows 跑 scripts 时会启 cmd 子 shell，可能通过 `setlocal/endlocal` 隔离临时变量，自定义 env 在跨 npm 边界时被吞。**直接 `node --watch index.js`** 最稳。
+
+### 一句话诊断法
+
+若怀疑开关没生效，**先打这行看原始值**，别只靠 `console.log`：
+
+```bash
+# 在 cmd 里
+set "MOCK_FAIL_WEIBO=1" && node -e "console.log(JSON.stringify(process.env.MOCK_FAIL_WEIBO))"
+# 正确输出应为 "1"（带引号的字符串 "1"，内部没有任何多余空格）
+```
+
+- 输出 `"1 "`（引号内有空格）或 `undefined` → env 没正确传入，先修终端写法；
+- 输出 `"1"` 但前端仍不变 → 才去查代码逻辑。
+
+---
 
 ## 生产构建（简要）
 

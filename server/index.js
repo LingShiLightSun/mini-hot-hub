@@ -40,13 +40,23 @@ const PLATFORMS = {
 // 抽取「单平台数据获取」为共享函数，供单平台路由与聚合路由复用。
 // 行为：先查缓存（命中直接返回）→ 未命中则生成；已登记 REAL_FETCHERS 的平台（weibo/zhihu/bilibili）走真实抓取，
 // 真实抓取失败 → 返回 error 态（不写缓存，便于下次重试）；严格不回退 Mock（即便未登记平台也如实返回错误态，不内置假数据）。
+// 开发期可通过 MOCK_FAIL_<平台>=1 注入故障（强制报错，用于验证前端 error 卡片，与“严格不回退”不冲突）。
 // 该函数永不 reject，调用方无需再 try/catch。
 async function getPlatformData(source, forceRefresh = false) {
   const meta = PLATFORMS[source]
   const cacheKey = `hot:${source}`
 
-  // 1) 非强制刷新时先查缓存
-  if (!forceRefresh) {
+  // ── 开发期故障注入（仅本地调试用，生产环境切勿设置）──────────────
+  // 设置 MOCK_FAIL_WEIBO=1 / MOCK_FAIL_ZHIHU=1 / MOCK_FAIL_BILIBILI=1 可强制让对应平台
+  // "抓取失败"，用于验证前端 error 卡片展示。这是"强制报错"而非"回退假数据"，
+  // 与项目"严格不回退"约束不冲突。注入时会跳过缓存（保证每次请求都走错误态）。
+  // 注意：env 值可能带尾随空格（如 Windows cmd `set X=1` 会把行尾空格吃进变量），
+  // 统一 .trim() 处理，避免 `=== '1'` 判定失败。
+  const failFlag = process.env[`MOCK_FAIL_${source.toUpperCase()}`]
+  const injectFail = failFlag != null && (failFlag.trim() === '1' || failFlag.trim() === 'true')
+
+  // 1) 非强制刷新且未注入故障时先查缓存
+  if (!forceRefresh && !injectFail) {
     const cached = getCache(cacheKey)
     if (cached) {
       console.log(`[cache hit] GET /api/hot/${source}`)
@@ -59,6 +69,12 @@ async function getPlatformData(source, forceRefresh = false) {
   let data
   if (realFetcher) {
     try {
+      if (injectFail) {
+        // 开发期故障注入：主动抛错，由下方 catch 转成 error 态（不写缓存）
+        throw new Error(
+          `[DEV] 已通过 MOCK_FAIL_${source.toUpperCase()}=1 注入故障，用于验证前端 error 卡片`
+        )
+      }
       const items = await realFetcher()
       data = {
         source: meta.source,
@@ -124,7 +140,8 @@ app.get('/api/hot', async (_req, res) => {
   const platforms = await Promise.all(
     Object.keys(PLATFORMS).map((key) => getPlatformData(key, false)),
   )
-  res.json({ platforms })
+  // 把当前生效的缓存 TTL（秒）透传给前端，用于页脚「更新频率约 × 分钟」展示
+  res.json({ platforms, cacheTtl: Number(process.env.CACHE_TTL) || 600 })
 })
 
 // 健康检查

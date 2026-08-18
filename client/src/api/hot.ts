@@ -68,28 +68,40 @@ export async function fetchHotPlatform(source: Source): Promise<HotPlatform> {
   }
 }
 
+export interface HotListResult {
+  platforms: HotPlatform[]
+  /** 后端当前生效的缓存 TTL（秒），用于页脚「更新频率约 × 分钟」展示 */
+  cacheTtl: number
+}
+
 /**
  * 拉取全部平台热榜。
  * 生产环境（已配 VITE_API_BASE）优先尝试后端聚合接口 GET /api/hot；
  * 其余情况逐平台调用 fetchHotPlatform（三平台均走后端，任一失败以错误态呈现）。
+ * 返回 { platforms, cacheTtl }，cacheTtl 取后端透传值（缺省 600 秒 = 10 分钟）。
  */
-export async function fetchAllHot(): Promise<HotPlatform[]> {
-  // 1) 生产环境优先尝试后端聚合接口
-  if (API_BASE) {
-    try {
-      const res = await fetch(`${API_BASE}/api/hot`)
-      if (res.ok) {
-        const body = (await res.json()) as
-          | HotPlatform[]
-          | { platforms?: HotPlatform[]; items?: HotPlatform[] }
-        const list = Array.isArray(body) ? body : (body.platforms ?? body.items)
-        if (list && list.length) return list
+export async function fetchAllHot(): Promise<HotListResult> {
+  // 优先尝试后端聚合接口 GET /api/hot（开发期经 Vite 代理同样可用；
+  // 全页「刷新」按钮即走此路径，对应「重新请求 /api/hot」的诉求）
+  try {
+    const res = await fetch(`${API_BASE}/api/hot`)
+    if (res.ok) {
+      const body = (await res.json()) as
+        | HotPlatform[]
+        | { platforms?: HotPlatform[]; items?: HotPlatform[]; cacheTtl?: number }
+      const list = Array.isArray(body) ? body : (body.platforms ?? body.items)
+      if (list && list.length) {
+        return {
+          platforms: list,
+          cacheTtl: typeof body.cacheTtl === 'number' ? body.cacheTtl : 600,
+        }
       }
-    } catch {
-      // 聚合失败：继续走逐平台拉取，各平台会自行以错误态呈现
     }
+  } catch {
+    // 聚合失败：继续走逐平台拉取，各平台会自行以错误态呈现
   }
 
-  // 2) 逐平台拉取：三平台均走后端，任一失败以错误态呈现
-  return Promise.all(PLATFORM_SOURCES.map((s) => fetchHotPlatform(s.source)))
+  // 逐平台拉取兜底：三平台均走后端，任一失败以错误态呈现
+  const platforms = await Promise.all(PLATFORM_SOURCES.map((s) => fetchHotPlatform(s.source)))
+  return { platforms, cacheTtl: 600 }
 }

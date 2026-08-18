@@ -1,4 +1,4 @@
-/* HotCard — 单平台热榜卡片（治愈风，复用 App.css 的 :root 变量） */
+/* HotCard — 单平台热榜卡片（暖色治愈风，复用 App.css 的 :root 变量） */
 
 .hot-card {
   display: flex;
@@ -34,7 +34,16 @@
   align-items: center;
   gap: 10px;
   padding: 8px 4px;
+  border-radius: 8px; /* 行悬停时圆角底，视觉更柔和 */
   border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+/* 桌面悬停（仅 hover 设备）：整行温柔亮起（暖奶油底），给人「被看见、被接住」的
+   回应感，呼应 PRD「将心注入」。去掉金竖条（与金色徽章抢戏），守克制。 */
+@media (hover: hover) {
+  .hot-card__item:hover {
+    background: #FCF4E8; /* 极淡暖奶油底 */
+  }
 }
 .hot-card__item:last-child {
   border-bottom: none;
@@ -45,10 +54,10 @@
   text-align: center;
   font-size: 14px;
   font-weight: 600;
-  color: var(--muted); /* 排名 4 及以后：默认灰字列表样式 */
+  color: var(--muted); /* 排名 4 及以后：默认暖灰字列表样式 */
 }
 
-/* 排名 1~3：各自不同的强调样式（治愈风三档递进） */
+/* 排名 1~3：暖金三档递进，呼应全站暖色语言（替代原冷金银铜） */
 .hot-card__item.is-rank-1 .hot-card__rank,
 .hot-card__item.is-rank-2 .hot-card__rank,
 .hot-card__item.is-rank-3 .hot-card__rank {
@@ -62,20 +71,21 @@
   font-size: 13px;
   line-height: 1;
 }
-/* 第 1 名：金色金属（最强） */
+/* 第 1 名：暖金 + 一抹暖玫瑰描边，呼应「将爱注入」（榜首=最受关注=被爱） */
 .hot-card__item.is-rank-1 .hot-card__rank {
-  background: linear-gradient(135deg, #f7d774 0%, #e0a82e 100%);
-  color: #5a3d00;
+  background: linear-gradient(135deg, #e8b53e 0%, #b07d3b 100%);
+  color: #fffdf8;
+  box-shadow: 0 0 0 2px rgba(227, 166, 166, 0.6);
 }
-/* 第 2 名：银色金属 */
+/* 第 2 名：暖金（深） */
 .hot-card__item.is-rank-2 .hot-card__rank {
-  background: linear-gradient(135deg, #e3e6ec 0%, #aab0bd 100%);
-  color: #3a3f4a;
+  background: linear-gradient(135deg, #e8c07a 0%, #c99a3f 100%);
+  color: #5a4632;
 }
-/* 第 3 名：青铜金属 */
+/* 第 3 名：暖金（浅/陶） */
 .hot-card__item.is-rank-3 .hot-card__rank {
-  background: linear-gradient(135deg, #e0a877 0%, #b87333 100%);
-  color: #fff;
+  background: linear-gradient(135deg, #ebdaa0 0%, #d9b36b 100%);
+  color: #5a4632;
 }
 /* 前三名标题略加深，整体更突出 */
 .hot-card__item.is-rank-1 .hot-card__title-link,
@@ -83,18 +93,33 @@
 .hot-card__item.is-rank-3 .hot-card__title-link {
   color: var(--text-h);
 }
+/* 悬停时前三名标题也转摩卡金（与 4–10 名一致），避免「只有底色变、字不变」的割裂感。
+   放前三名规则之后：同特异度下靠后生效，确保能覆盖上方的 --text-h。 */
+@media (hover: hover) {
+  .hot-card__item:hover .hot-card__title-link {
+    color: var(--accent);
+  }
+}
 
 .hot-card__title-link {
+  position: relative; /* 气泡绝对定位的锚点；此处不设 overflow，否则会把上浮的气泡裁掉 */
   flex: 1;
   min-width: 0;
+  display: block;
   color: var(--text);
   text-decoration: none;
   font-size: 14px;
-  /* 手机端（默认样式）：标题自动换行显示完整，避免长标题横向溢出导致整页可横滑 */
-  white-space: normal;
-  overflow-wrap: anywhere; /* 超长无空格串（如 B站 标题）也能在任意字符处断行，防止撑宽卡片 */
-  word-break: break-word;
   transition: color 0.15s;
+}
+/* 真正承载「省略 / 换行」的是内层文本元素，溢出裁剪只发生在这里；
+   气泡作为同级绝对定位元素不再被裁切——这是此前气泡悬停不出现的根因。 */
+.hot-card__title-text {
+  display: block;
+  min-width: 0;
+  /* 手机端（默认）：自动换行显示完整，避免长标题横向溢出撑宽卡片 */
+  white-space: normal;
+  overflow-wrap: anywhere; /* 超长无空格串（如 B站 标题）也能在任意字符处断行 */
+  word-break: break-word;
 }
 .hot-card__title-link:hover {
   color: var(--accent);
@@ -131,7 +156,7 @@
 }
 .hot-card__skeleton-rank,
 .hot-card__skeleton-line {
-  background: linear-gradient(90deg, #efeaf3 25%, #f6f2fa 37%, #efeaf3 63%);
+  background: linear-gradient(90deg, #f1e8d8 25%, #fbf3e6 37%, #f1e8d8 63%); /* 暖米骨架（替代冷紫） */
   background-size: 400% 100%;
   animation: hot-card-shimmer 1.4s ease infinite;
 }
@@ -177,6 +202,10 @@
   background: var(--accent);
   color: #fff;
 }
+.hot-card__retry:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .hot-card__foot {
   margin-top: 12px;
@@ -186,13 +215,60 @@
   color: var(--muted);
 }
 
-/* 桌面端（≥720px）：标题恢复单行省略（与手机端换行显示完整分开，用户已定方案 a） */
+/* 桌面端（≥720px）：内层文本恢复单行省略（与手机端换行显示完整分开，用户已定方案 a） */
 @media (min-width: 720px) {
-  .hot-card__title-link {
+  .hot-card__title-text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     overflow-wrap: normal;
     word-break: normal;
+  }
+}
+
+/* 桌面奶黄气泡 A：仅标题被省略（is-truncated）且桌面 ≥720px 时，hover/focus 显示完整标题。
+   奶黄色系与全站暖色语言一致；原生 title 仅作未溢出兜底，避免双 tooltip。 */
+.hot-card__bubble {
+  position: absolute;
+  bottom: calc(100% + 8px); /* 仍浮在标题上方 */
+  right: -180px; /* 大幅右溢出 180px：跨过列间距、盖到右侧其他列（B站/知乎），自己表头完全不被遮挡。10px 溢出会被 ~20px 的 grid gap 吸掉，实测等于没溢出，这里直接给足量 */
+  max-width: 280px;
+  padding: 8px 12px;
+  background: #fbf1cf; /* 奶黄底 */
+  color: #5a4a2e;      /* 深暖棕字 */
+  border: 1px solid rgba(176, 125, 59, 0.25); /* 极淡暖金描边 */
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-shadow: 0 6px 18px rgba(150, 120, 80, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  z-index: 20;
+  pointer-events: none;
+}
+/* 小三角翻回左下，指向标题文字：气泡虽大幅右溢出，但和标题之间仍有视觉连接 */
+.hot-card__bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 16px;
+  border: 6px solid transparent;
+  border-top-color: #fbf1cf;
+}
+.hot-card__title-link.is-truncated:hover .hot-card__bubble,
+.hot-card__title-link.is-truncated:focus-visible .hot-card__bubble {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+/* 手机端（<720px）标题自动换行、不溢出，额外保险隐藏气泡，避免误触发 */
+@media (max-width: 719.98px) {
+  .hot-card__bubble {
+    display: none;
   }
 }

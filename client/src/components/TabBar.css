@@ -11,19 +11,34 @@
   border: none;
   background: transparent;
   color: var(--muted);
-  padding: 6px 14px;
+  padding: 6px 16px;
   border-radius: 999px;
   cursor: pointer;
   font-size: 15px;
-  transition: all 0.2s;
+  /* 与列表条目一致的缓动语言：背景 / 颜色 / 阴影平滑过渡 */
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
 }
 
-.tab-bar__item:hover {
-  color: var(--text);
+/* 悬停：与列表条目同一套「被接住」语言。但这里直接坐在页面奶油底 #FBF6EC 上，
+   若沿用列表的白卡暖奶油 #FCF4E8，就是奶油叠奶油、等于无反馈。
+   故悬停底要明显深于页面底（#F5EAD9），并加极轻暖影让格子轻轻「浮起」。 */
+@media (hover: hover) {
+  .tab-bar__item:hover {
+    background: #F5EAD9; /* 深于页面底 #FBF6EC，悬停清晰可见 */
+    color: var(--text-h);
+    box-shadow: 0 1px 4px rgba(176, 125, 59, 0.10); /* 极轻暖影，浮起一点点 */
+  }
 }
 
+/* 选中：比悬停再深一档的暖 + 摩卡金字 + 轻柔暖影，像「坐定在此」被温柔托起 */
 .tab-bar__item.is-active {
-  background: var(--accent-soft);
+  background: #EFE0C8; /* 比悬停 #F5EAD9 更深，层级分明 */
   color: var(--accent);
-  font-weight: 500;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(176, 125, 59, 0.18); /* 柔和暖影，不喧哗 */
+}
+
+/* 按下：极轻下沉，给点击一个回应（将心注入，但克制） */
+.tab-bar__item:active {
+  transform: translateY(1px);
 }
