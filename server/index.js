@@ -89,8 +89,8 @@ function buildPlatform(key) {
 }
 
 // 抽取「单平台数据获取」为共享函数，供单平台路由与聚合路由复用。
-// 行为：先查缓存（命中直接返回）→ 未命中则生成；接入真实抓取的平台走 REAL_FETCHERS，
-// 未接入的（bilibili）走 Mock；真实抓取失败时返回 error 态（不写缓存，便于下次重试）。
+// 行为：先查缓存（命中直接返回）→ 未命中则生成；已登记 REAL_FETCHERS 的平台（weibo/zhihu/bilibili）走真实抓取，
+// 未登记的新平台回退 Mock；真实抓取失败时返回 error 态（不写缓存，便于下次重试）。
 // 该函数永不 reject，调用方无需再 try/catch。
 async function getPlatformData(source, forceRefresh = false) {
   const meta = PLATFORMS[source]

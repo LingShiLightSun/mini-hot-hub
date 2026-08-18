@@ -1,3 +1,6 @@
+import { formatHeat } from '../utils/formatHeat.js'
+import { sortByHeatDesc } from '../utils/sortByHeatDesc.js'
+
 // server/services/bilibili.js
 // 哔哩哔哩热搜抓取服务（学习 / 演示用途，非官方接口）
 //
@@ -47,22 +50,6 @@ const HEADERS = {
 }
 
 /**
- * 把 B站 原始热度数值格式化为「万/亿」可读字符串，对齐 TECH_DESIGN 的 heat?: string。
- * ⚠️ B站 的 hot_value 是带单位的字符串（如 "1456769播放"），需先剥离非数字字符再转换；
- *    而微博/知乎 返回的是纯数字字符串（如 "2283814"），本函数对两者均兼容。
- * @param {unknown} raw 原始热度（可能是 "1456769播放" / "2283814" / 缺）
- * @returns {string} 格式化后的热度字符串；无效时返回空串（heat 可选）
- */
-function formatHeat(raw) {
-  // 先剥离所有非数字、非小数点字符（去掉「播放」等后缀），再转 Number
-  const n = Number(String(raw ?? '').replace(/[^\d.]/g, ''))
-  if (!Number.isFinite(n) || n <= 0) return ''
-  if (n >= 1e8) return (n / 1e8).toFixed(2).replace(/\.?0+$/, '') + '亿'
-  if (n >= 1e4) return (n / 1e4).toFixed(1).replace(/\.?0+$/, '') + '万'
-  return String(n)
-}
-
-/**
  * 抓取并解析哔哩哔哩热搜榜。
  * @returns {Promise<{rank:number, title:string, heat:string, url:string}[]>}
  * @throws {Error} 任何网络 / 接口异常都会抛出带清晰原因的错误
@@ -108,22 +95,26 @@ export async function fetchBilibiliHot() {
     )
   }
 
-  // 与 Mock（PLATFORMS.bilibili.items）保持 10 条对齐
-  // 聚合源通常返 50 条，如不限量前端卡片会被拉得很长，故在数据层统一截断
-  const trimmed = list.slice(0, ITEM_LIMIT)
-
-  // 逐条映射成 { rank, title, heat, url }
-  return trimmed.map((item, index) => {
+  // ── 排序策略 ────────────────────────────────────────────
+  // uapis.cn 的 list[] 不保证按热度降序（B站 曾踩坑：第 8 名 585.7万、第 10 名 550.1万
+  // 被排在末尾）。为让 rank 1..10 真正反映热度榜，先 map 出含 _heatRaw（原始热度数值，
+  // 仅用于排序）的中间数组，再交给通用工具 sortByHeatDesc 按数值降序排、截断前
+  // ITEM_LIMIT 名、重排 rank 1..n。必须用原始数值排序，不能用已格式化的 "585.7万" 字符串。
+  const mapped = list.map((item) => {
     // title：热门视频标题
     const title = item.title ?? item.word ?? item.name ?? ''
-    // heat：热度（B站 为 "1456769播放" 带单位，formatHeat 先剥离非数字再格式化为「万/亿」）
+    // heat：格式化后的热度（"585.7万" 这种 string，先剥离非数字再用 formatHeat）
     const heat = formatHeat(item.hot_value ?? item.hot ?? item.num ?? 0)
     // url：视频详情链接；缺失时自行拼接 B站 搜索页（keyword 参数，需编码）
     const fallbackUrl =
       'https://www.bilibili.com/search?keyword=' + encodeURIComponent(title)
     const url = item.url ?? item.mobileUrl ?? item.mobil_url ?? item.link ?? fallbackUrl
-    // rank：优先用接口的 index 字段，缺失时按下标兜底
-    const rank = typeof item.index === 'number' ? item.index : index + 1
-    return { rank, title, heat, url }
+    // _heatRaw：原始热度数字，仅用于排序；非数字/缺失归 0 → 排到末尾
+    const _heatRaw = Number(
+      String(item.hot_value ?? item.hot ?? item.num ?? 0).replace(/[^\d.]/g, '')
+    )
+    return { title, heat, url, _heatRaw: Number.isFinite(_heatRaw) ? _heatRaw : 0 }
   })
+
+  return sortByHeatDesc(mapped, ITEM_LIMIT)
 }

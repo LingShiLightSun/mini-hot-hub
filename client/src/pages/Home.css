@@ -59,7 +59,8 @@
 }
 @media (min-width: 720px) {
   .home-grid {
-    grid-template-columns: repeat(3, 1fr); /* 桌面三列 */
+    /* 关键：minmax(0, 1fr) 强制三列 1:1:1 等宽，长标题不再撑大所在列 */
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* 桌面三列 */
   }
 }
 

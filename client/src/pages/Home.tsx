@@ -60,7 +60,7 @@ export default function Home() {
           学习项目 · 仅供学习交流 · 非商用
         </p>
         <p className="home-footer__line home-footer__sub">
-          数据来自各平台公开热榜，版权归原平台所有，本页面仅作展示用途（当前为 Mock 数据）
+          数据实时获取自各平台公开热榜（第三方聚合接口），版权归原平台所有，本页面仅作展示用途
         </p>
       </footer>
     </div>
