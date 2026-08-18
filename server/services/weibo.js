@@ -35,7 +35,7 @@ import { sortByHeatDesc } from '../utils/sortByHeatDesc.js'
 //   任何网络层/HTTP/JSON 解析/结构异常都向上 throw，
 //   由调用方（路由层）转换为 error 态响应（不缓存），由前端展示重试。
 
-// 与 Mock（PLATFORMS.weibo.items）保持 10 条对齐（聚合源通常返 50 条，需前端截断体验差，
+// 统一截到 10 条返回（聚合源通常返 50 条，前端直接渲染 10 条体验更好，
 // 故在数据层统一截到 10 条；未来如要放宽只需改这里）
 const ITEM_LIMIT = 10
 
