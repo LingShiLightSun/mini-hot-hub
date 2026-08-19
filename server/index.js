@@ -14,7 +14,14 @@ const REAL_FETCHERS = {
 
 const app = express()
 const PORT = process.env.PORT || 3001
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+// CORS 来源：兜底 localhost:5173；规范化去尾随空格 + 结尾斜杠。
+// 起因：Railway 控制台若填 `https://xxx.vercel.app/`（带尾斜杠），cors 中间件
+// 会拿它和浏览器实际发出的 Origin（`https://xxx.vercel.app`，无斜杠）做精确匹配，
+// 两者不等 → 浏览器拦掉响应。统一规范化后无论填带不带斜杠都能正确放行。
+// 也符合项目铁律：env 值一律 .trim() 后使用。
+const CLIENT_ORIGIN = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  .trim()
+  .replace(/\/+$/, '')
 
 // 前端 dev 域名跨域放行（AGENTS.md：Vite 代理 /api -> localhost:3001）
 app.use(
