@@ -86,14 +86,23 @@ export async function fetchAllHot(): Promise<HotListResult> {
   try {
     const res = await fetch(`${API_BASE}/api/hot`)
     if (res.ok) {
-      const body = (await res.json()) as
-        | HotPlatform[]
-        | { platforms?: HotPlatform[]; items?: HotPlatform[]; cacheTtl?: number }
-      const list = Array.isArray(body) ? body : (body.platforms ?? body.items)
-      if (list && list.length) {
-        return {
-          platforms: list,
-          cacheTtl: typeof body.cacheTtl === 'number' ? body.cacheTtl : 600,
+      // 后端当前契约固定为 { platforms, cacheTtl }；为兼容旧形态（直接返回数组）做双分支。
+      // 用 unknown 收住、运行时按形态分派，避免对联合类型直接点属性触发 TS2339。
+      const body: unknown = await res.json()
+      if (Array.isArray(body)) {
+        if (body.length) return { platforms: body as HotPlatform[], cacheTtl: 600 }
+      } else if (body && typeof body === 'object') {
+        const obj = body as {
+          platforms?: HotPlatform[]
+          items?: HotPlatform[]
+          cacheTtl?: number
+        }
+        const list = obj.platforms ?? obj.items
+        if (list && list.length) {
+          return {
+            platforms: list,
+            cacheTtl: typeof obj.cacheTtl === 'number' ? obj.cacheTtl : 600,
+          }
         }
       }
     }

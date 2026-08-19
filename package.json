@@ -1,0 +1,12 @@
+{
+  "name": "mini-hot-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "聚合微博 / 知乎 / B站 热点的多平台 trending 聚合 Web 应用（学习 / 非商业项目）",
+  "scripts": {
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev",
+    "start:server": "npm --prefix server run start",
+    "build:client": "npm --prefix client run build"
+  }
+}

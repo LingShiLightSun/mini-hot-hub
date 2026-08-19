@@ -2,6 +2,22 @@ import type { HotPlatform, HotItem } from '../types/hot'
 import { useIsTruncated } from '../hooks/useIsTruncated'
 import './HotCard.css'
 
+/**
+ * 平台品牌气质（仅用于表头小图标的颜色与首字，小面积点缀，不破坏全站暖底）。
+ * 想退回「统一暖色（方案 C）」只需把三行 color 都改成 var 里的摩卡金 #B07D3B。
+ */
+const PLATFORM_META: Record<string, { initial: string; color: string }> = {
+  '微博': { initial: '微', color: '#E08A4E' }, // 暖橙（略加深，白字可读）
+  '知乎': { initial: '知', color: '#5E8098' }, // 雾蓝（去饱和、略加深，与暖奶油底更协调，白字对比约 4:1）
+  '哔哩哔哩': { initial: 'B', color: '#E78AA6' }, // 柔粉（略加深）
+  'B站': { initial: 'B', color: '#E78AA6' }, // 柔粉（与「哔哩哔哩」同色，兼容加载/错误态传来的展示名）
+}
+
+/** 展示名映射：把后端返回的「哔哩哔哩」换成更轻的「B站」，三卡表头更齐整 */
+const SOURCE_DISPLAY: Record<string, string> = {
+  '哔哩哔哩': 'B站',
+}
+
 interface HotCardProps {
   /** 是否加载中（显示骨架屏） */
   loading?: boolean
@@ -109,16 +125,22 @@ export default function HotCard({
   reloading,
   sourceName,
 }: HotCardProps) {
-  const name = data?.sourceName ?? sourceName ?? '热榜'
-  const listName = data?.listName ?? ''
+  const rawName = data?.sourceName ?? sourceName ?? '热榜'
+  const name = SOURCE_DISPLAY[rawName] ?? rawName
+  const meta =
+    PLATFORM_META[rawName] ?? { initial: name.slice(0, 1), color: '#B07D3B' }
 
   return (
     <section className="hot-card">
       <header className="hot-card__head">
-        <h3 className="hot-card__title">
-          {name}
-          {listName ? ` · ${listName}` : ''}
-        </h3>
+        <span
+          className="hot-card__badge"
+          style={{ background: meta.color }}
+          aria-hidden="true"
+        >
+          {meta.initial}
+        </span>
+        <h3 className="hot-card__title">{name}</h3>
       </header>
 
       {loading ? (
