@@ -1,16 +1,46 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import HotCard from '../components/HotCard'
 import TabBar, { type Tab, type TabItem } from '../components/TabBar'
 import { useHotList } from '../hooks/useHotList'
 import { PLATFORM_SOURCES } from '../api/hot'
+import { getQuoteAt } from '../data/dailyQuotes'
 import './Home.css'
 
-export default function Home() {
-  const { platforms, loading, error, cacheTtl, refresh, retrySource, reloading } = useHotList()
-  const [tab, setTab] = useState<Tab>('all')
+// 每 10 分钟一轮的淡入淡出旋转金句：窗口内稳定、跨窗口自动换、每圈重洗不循环
+function useRotatingQuote() {
+  const quoteRef = useRef('')
+  const [quote, setQuote] = useState(() => {
+    const q = getQuoteAt(Date.now())
+    quoteRef.current = q
+    return q
+  })
+  const [visible, setVisible] = useState(true)
 
-  // 页脚「更新频率」：缓存 TTL（秒）换算成分钟，至少 1 分钟，便于阅读
-  const ttlMinutes = Math.max(1, Math.round(cacheTtl / 60))
+  useEffect(() => {
+    let fadeTimer: ReturnType<typeof setTimeout> | undefined
+    const interval = setInterval(() => {
+      const next = getQuoteAt(Date.now())
+      if (next === quoteRef.current) return
+      setVisible(false) // 轻轻淡出
+      fadeTimer = setTimeout(() => {
+        quoteRef.current = next
+        setQuote(next)
+        setVisible(true) // 轻轻淡入
+      }, 450)
+    }, 15_000)
+    return () => {
+      clearInterval(interval)
+      if (fadeTimer) clearTimeout(fadeTimer)
+    }
+  }, [])
+
+  return { quote, visible }
+}
+
+export default function Home() {
+  const { quote, visible } = useRotatingQuote()
+  const { platforms, loading, error, refresh, retrySource, reloading } = useHotList()
+  const [tab, setTab] = useState<Tab>('all')
 
   const tabs: TabItem[] = [
     { key: 'all', label: '全部' },
@@ -27,8 +57,8 @@ export default function Home() {
       <header className="home-header">
         <div className="home-brand">
           <h1 className="home-title">迷你今日热榜</h1>
-          <p className="home-intro">
-            一个页面看遍各平台当下最热的事件，省去到处找热度的时间。
+          <p className={`home-intro${visible ? '' : ' home-intro--fading'}`}>
+            {quote}
           </p>
         </div>
         <button className="home-refresh" onClick={refresh} disabled={loading}>
@@ -68,10 +98,10 @@ export default function Home() {
           数据来源于各平台公开信息（第三方聚合接口获取），非官方数据，版权归各平台所有。
         </p>
         <p className="home-footer__line home-footer__sub">
-          页面更新频率约 {ttlMinutes} 分钟（接口缓存时间，可由后端 CACHE_TTL 环境变量调整）。
-        </p>
-        <p className="home-footer__line home-footer__sub">
           如有侵权或违规内容，请联系：lingshiqingshi@qq.com。
+        </p>
+        <p className="home-footer__line home-footer__motto">
+          ——将心注入·将爱注入——
         </p>
       </footer>
     </div>

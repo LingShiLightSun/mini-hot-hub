@@ -230,6 +230,21 @@
   border-top: 1px dashed var(--border);
   font-size: 12px;
   color: var(--muted);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+/* B站等较慢源的人味提醒：极小(10px)+极淡(0.35)暖金，
+   紧跟时间右侧、单行左对齐、右侧留白——凑近才看清的「碎碎念」耳语感，
+   不改 footer 高度，三卡对齐统一。不加 hover 变化，纯靠小+淡实现发现式阅读。 */
+.hot-card__foot-hint {
+  font-size: 10px;
+  color: var(--accent, #b07d3b);
+  opacity: 0.35;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 /* 桌面端（≥720px）：内层文本恢复单行省略（与手机端换行显示完整分开，用户已定方案 a） */

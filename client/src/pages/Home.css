@@ -29,6 +29,10 @@
   font-size: 13px;
   color: var(--muted);
   line-height: 1.6;
+  transition: opacity 0.45s ease;
+}
+.home-intro--fading {
+  opacity: 0;
 }
 .home-refresh {
   flex: 0 0 auto;
@@ -87,4 +91,11 @@
   margin-top: 4px;
   font-size: 11px;
   opacity: 0.8;
+}
+.home-footer__motto {
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--accent);
 }

@@ -174,7 +174,14 @@ export default function HotCard({
       ) : null}
 
       <footer className="hot-card__foot">
-        {data ? formatUpdatedAt(data.updatedAt) : '—'}
+        <span className="hot-card__foot-time">
+          {data ? formatUpdatedAt(data.updatedAt) : '—'}
+        </span>
+        {data?.source === 'bilibili' && (
+          <span className="hot-card__foot-hint">
+            B站榜单刷新得比较慢，不是不更新哦~
+          </span>
+        )}
       </footer>
     </section>
   )

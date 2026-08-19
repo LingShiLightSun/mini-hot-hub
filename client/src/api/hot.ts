@@ -1,44 +1,90 @@
-// 数据获取封装（v2）— 单平台 / 全量，严格「不回退 Mock」
+// 数据获取封装（v3）— 前端直连 uapis.cn 聚合源，就地归一化为 HotPlatform
 //
-// 设计要点（2026-08-17 修订）：
-// - 任何平台都必须从后端拿到真实数据；「未接入后端」或「请求失败」都不再静默回退 Mock，
-//   而是把问题明确返回（HotPlatform.error=true + 可读 message），由 HotCard 以错误态呈现。
-// - fetchHotPlatform(source)：未登记路由 -> 报错「尚未接入后端」；已登记但请求失败 -> 报错「后端错误 / 无法连接」；
-//   只有 2xx 且解析成功才返回正常数据。
-// - fetchAllHot()：生产环境（配了 VITE_API_BASE）优先试聚合接口 GET /api/hot；
-//   其余情况逐平台调用 fetchHotPlatform。
+// 设计要点（2026-08-19 方案 B）：
+// - 此前前端经自建 Express 后端（Railway，海外）取数，大陆访问被 RST → 三卡空。
+// - 实测 uapis.cn 的 CORS 为反射型（允许任意域名跨域直连）、域名在中国，
+//   故改为前端直接 fetch uapis.cn，链路全程走国内，彻底规避 RST。
+// - 严格「不回退 Mock」：任一平台拉取失败 / 结构异常 → 返回 error 态
+//   （HotPlatform.error=true + 温柔 message），由 HotCard 以错误态呈现。
+// - 归一化逻辑从后端 services/*.js 平移到此处：取 list → 按热度数值降序排序 →
+//   截 10 条 → 重排 rank 1..n → 包成 { source, sourceName, listName, items }。
 
 import type { HotPlatform, Source } from '../types/hot'
 
-// 生产环境可配 VITE_API_BASE 指向真实后端域名；开发期为空时走 Vite /api 代理（相对路径）
-const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? ''
+// uapis.cn 公开热榜聚合接口（国内可达、CORS 反射型允许跨域直连）
+const UAPIS_BASE = 'https://uapis.cn/api/v1/misc/hotboard'
 
-// 已接入后端的平台 -> 路由。新增平台需在此注册，否则前端会以「未接入」错误态呈现。
-const BACKEND_ROUTES: Partial<Record<Source, string>> = {
-  weibo: '/api/hot/weibo',
-  zhihu: '/api/hot/zhihu',
-  bilibili: '/api/hot/bilibili',
+// 平台 → uapis.cn 的 type 参数（新增平台只需在此加一行）
+const SOURCE_TO_TYPE: Record<Source, string> = {
+  weibo: 'weibo',
+  zhihu: 'zhihu',
+  bilibili: 'bilibili',
 }
 
-// 平台中文名（仅用于错误态展示，不承载数据）
-const SOURCE_LABELS: Record<Source, string> = {
-  weibo: '微博',
-  zhihu: '知乎',
-  bilibili: 'B站',
+// 平台展示元信息（uapis.cn 响应只给 type，sourceName/listName 由前端补）
+const SOURCE_META: Record<Source, { sourceName: string; listName: string }> = {
+  weibo: { sourceName: '微博', listName: '热搜榜' },
+  zhihu: { sourceName: '知乎', listName: '热榜' },
+  bilibili: { sourceName: 'B站', listName: '热搜' },
 }
 
-// 平台注册表：由 BACKEND_ROUTES + SOURCE_LABELS 派生的「有哪些平台」单一数据源。
-// 首页 Tab、卡片列表、逐平台拉取都从这里取；新增平台只改上面的 BACKEND_ROUTES 即可。
+// 平台注册表：首页 Tab、卡片列表、逐平台拉取都从这里取；新增平台只改上面两处。
 export const PLATFORM_SOURCES: { source: Source; sourceName: string }[] = (
-  Object.keys(BACKEND_ROUTES) as Source[]
-).map((source) => ({ source, sourceName: SOURCE_LABELS[source] }))
+  Object.keys(SOURCE_META) as Source[]
+).map((source) => ({ source, sourceName: SOURCE_META[source].sourceName }))
+
+const ITEM_LIMIT = 10
+
+/** 把原始热度格式化为「万/亿」可读串（对齐后端 formatHeat 行为） */
+function formatHeat(raw: unknown): string {
+  if (raw == null) return ''
+  const s = String(raw).trim()
+  if (!s) return ''
+  const digits = s.replace(/[^\d.]/g, '')
+  if (!digits) return ''
+  const n = Number(digits)
+  if (!Number.isFinite(n) || n <= 0) return ''
+  if (/亿/.test(s)) return n.toFixed(2).replace(/\.?0+$/, '') + '亿'
+  if (/万/.test(s)) return n.toFixed(1).replace(/\.?0+$/, '') + '万'
+  if (n >= 1e8) return (n / 1e8).toFixed(2).replace(/\.?0+$/, '') + '亿'
+  if (n >= 1e4) return (n / 1e4).toFixed(1).replace(/\.?0+$/, '') + '万'
+  return String(n)
+}
+
+/** 按原始热度数值降序排序 + 截 10 + 重排 rank（对齐后端 sortByHeatDesc 行为） */
+function sortByHeatDesc(
+  items: { title: string; heat: string; url: string; _heatRaw: number }[],
+): { rank: number; title: string; heat: string; url: string }[] {
+  const sorted = [...items].sort((a, b) => b._heatRaw - a._heatRaw)
+  return sorted.slice(0, ITEM_LIMIT).map((item, index) => ({
+    rank: index + 1,
+    title: item.title,
+    heat: item.heat,
+    url: item.url,
+  }))
+}
+
+/** uapis.cn 返回的单个热榜条目（仅取我们用到的字段） */
+interface RawItem {
+  title?: string
+  word?: string
+  name?: string
+  hot_value?: unknown
+  hot?: unknown
+  num?: unknown
+  url?: string
+  mobileUrl?: string
+  mobil_url?: string
+  link?: string
+  index?: number
+}
 
 // 构造一个「加载失败」的平台对象，交给 HotCard 以错误态显现
 function toErrorPlatform(source: Source, message: string): HotPlatform {
   return {
     source,
-    sourceName: SOURCE_LABELS[source],
-    listName: '',
+    sourceName: SOURCE_META[source].sourceName,
+    listName: SOURCE_META[source].listName,
     updatedAt: new Date().toISOString(),
     items: [],
     error: true,
@@ -46,71 +92,76 @@ function toErrorPlatform(source: Source, message: string): HotPlatform {
   }
 }
 
+/** 拉取失败时统一的温柔提示（TODO-7 整改成果） */
+const FETCH_FAILED_MSG = '热榜数据暂时拉不到，过会儿再来看看～'
+
 /**
  * 拉取单个平台热榜（严格模式：不回退 Mock）。
- * - 未登记后端路由：返回「尚未接入后端数据源」错误。
- * - 已登记但请求失败（网络异常 / 非 2xx）：返回具体错误原因。
- * - 仅请求成功且解析正常时返回真实数据。
+ * 直连 uapis.cn，失败 / 结构异常一律以 error 态返回。
  */
 export async function fetchHotPlatform(source: Source): Promise<HotPlatform> {
-  const route = BACKEND_ROUTES[source]
-  if (!route) {
-    return toErrorPlatform(source, `平台「${SOURCE_LABELS[source]}」尚未接入后端数据源，无法加载`)
-  }
+  const url = `${UAPIS_BASE}?type=${SOURCE_TO_TYPE[source]}`
   try {
-    const res = await fetch(`${API_BASE}${route}`)
+    const res = await fetch(url)
     if (!res.ok) {
-      return toErrorPlatform(source, `后端返回错误（HTTP ${res.status}），请稍后重试`)
+      return toErrorPlatform(source, FETCH_FAILED_MSG)
     }
-    return (await res.json()) as HotPlatform
+    const body = (await res.json()) as { list?: unknown; update_time?: string }
+    const list = body?.list
+    if (!Array.isArray(list) || list.length === 0) {
+      return toErrorPlatform(source, FETCH_FAILED_MSG)
+    }
+    const meta = SOURCE_META[source]
+    const mapped = (list as RawItem[]).map((item) => {
+      const title = item.title ?? item.word ?? item.name ?? ''
+      const heat = formatHeat(item.hot_value ?? item.hot ?? item.num ?? 0)
+      const fallbackUrl =
+        'https://s.weibo.com/weibo?q=' + encodeURIComponent('#' + title + '#')
+      const url =
+        item.url ??
+        item.mobileUrl ??
+        item.mobil_url ??
+        item.link ??
+        (source === 'weibo' ? fallbackUrl : '')
+      const _heatRaw = Number(
+        String(item.hot_value ?? item.hot ?? item.num ?? 0).replace(/[^\d.]/g, ''),
+      )
+      return {
+        title,
+        heat,
+        url,
+        _heatRaw: Number.isFinite(_heatRaw) ? _heatRaw : 0,
+      }
+    })
+    return {
+      source,
+      sourceName: meta.sourceName,
+      listName: meta.listName,
+      // 用上游真实的 update_time（完整 ISO 时间戳），不用本端 fetch 时间：
+      // 数据源本身有快慢——B站上游约每小时才刷新一次，显示「N 分钟前」是事实，
+      // 不应伪装成「刚刚更新」欺骗用户（违背 PRD「诚实」原则 P3）。
+      // 对于较慢的平台，由 HotCard 底部小字温柔提示「不是不更新哦~」，
+      // 既真实，又有人味，更贴合「将心注入、将爱注入」的定位。
+      updatedAt: body.update_time ?? new Date().toISOString(),
+      items: sortByHeatDesc(mapped),
+    }
   } catch {
-    return toErrorPlatform(source, `无法连接后端（${route}），请确认服务已启动`)
+    return toErrorPlatform(source, FETCH_FAILED_MSG)
   }
 }
 
 export interface HotListResult {
   platforms: HotPlatform[]
-  /** 后端当前生效的缓存 TTL（秒），用于页脚「更新频率约 × 分钟」展示 */
+  /** 名义更新频率（秒），用于页脚「更新频率约 × 分钟」展示 */
   cacheTtl: number
 }
 
 /**
- * 拉取全部平台热榜。
- * 生产环境（已配 VITE_API_BASE）优先尝试后端聚合接口 GET /api/hot；
- * 其余情况逐平台调用 fetchHotPlatform（三平台均走后端，任一失败以错误态呈现）。
- * 返回 { platforms, cacheTtl }，cacheTtl 取后端透传值（缺省 600 秒 = 10 分钟）。
+ * 拉取全部平台热榜：三平台并行直连 uapis.cn，任一失败以 error 态呈现，互不阻塞。
  */
 export async function fetchAllHot(): Promise<HotListResult> {
-  // 优先尝试后端聚合接口 GET /api/hot（开发期经 Vite 代理同样可用；
-  // 全页「刷新」按钮即走此路径，对应「重新请求 /api/hot」的诉求）
-  try {
-    const res = await fetch(`${API_BASE}/api/hot`)
-    if (res.ok) {
-      // 后端当前契约固定为 { platforms, cacheTtl }；为兼容旧形态（直接返回数组）做双分支。
-      // 用 unknown 收住、运行时按形态分派，避免对联合类型直接点属性触发 TS2339。
-      const body: unknown = await res.json()
-      if (Array.isArray(body)) {
-        if (body.length) return { platforms: body as HotPlatform[], cacheTtl: 600 }
-      } else if (body && typeof body === 'object') {
-        const obj = body as {
-          platforms?: HotPlatform[]
-          items?: HotPlatform[]
-          cacheTtl?: number
-        }
-        const list = obj.platforms ?? obj.items
-        if (list && list.length) {
-          return {
-            platforms: list,
-            cacheTtl: typeof obj.cacheTtl === 'number' ? obj.cacheTtl : 600,
-          }
-        }
-      }
-    }
-  } catch {
-    // 聚合失败：继续走逐平台拉取，各平台会自行以错误态呈现
-  }
-
-  // 逐平台拉取兜底：三平台均走后端，任一失败以错误态呈现
-  const platforms = await Promise.all(PLATFORM_SOURCES.map((s) => fetchHotPlatform(s.source)))
+  const platforms = await Promise.all(
+    PLATFORM_SOURCES.map((s) => fetchHotPlatform(s.source)),
+  )
   return { platforms, cacheTtl: 600 }
 }
