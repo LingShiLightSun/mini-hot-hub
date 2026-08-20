@@ -1,0 +1,120 @@
+/* 开场动画：暖色蒙层 + 呼吸的心 + motto + 金句小字 + 进入按钮（治愈风，克制） */
+
+.entry-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, var(--card-bg) 0%, var(--bg) 55%, var(--bg-deep) 100%);
+  opacity: 0; /* 进/退场共用这条 opacity 过渡（进场由 .entry-overlay--shown 点亮） */
+  transition: opacity 0.65s ease;
+  cursor: default;
+}
+.entry-overlay--shown {
+  opacity: 1;
+}
+.entry-overlay--leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.entry-overlay__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 480px;
+  padding: 0 28px;
+  text-align: center;
+  transition: transform 0.65s ease; /* 退场时轻轻「退半步」，柔化硬切 */
+}
+.entry-overlay--leaving .entry-overlay__inner {
+  transform: scale(0.985);
+}
+
+.entry-overlay__emblem-wrap {
+  animation: entry-rise 1s ease both;
+}
+.entry-overlay__emblem {
+  width: 56px;
+  height: 56px;
+  fill: var(--emblem);
+  animation: entry-breathe 2.8s ease-in-out 1s infinite;
+  filter: drop-shadow(0 6px 18px var(--emblem-shadow));
+}
+
+.entry-overlay__motto {
+  margin: 22px 0 0;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  line-height: 1.6;
+  white-space: pre-line; /* 尊重文本里的换行（夜色话语两行排布） */
+  color: var(--text-h);
+  animation: entry-rise 1.2s ease 0.9s both;
+}
+
+/* 夜色/浅绿的话语更长：窄屏适当收字号与字距，避免一行放不下而硬换行 */
+@media (max-width: 380px) {
+  .entry-overlay__motto {
+    font-size: 17px;
+    letter-spacing: 2px;
+  }
+}
+
+.entry-overlay__quote {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+  opacity: 0.75;
+  animation: entry-rise 1.2s ease 1.5s both;
+}
+
+.entry-overlay__enter {
+  margin-top: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 30px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--accent);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  animation: entry-rise 1s ease 2.1s both;
+}
+.entry-overlay__enter:hover {
+  background: var(--accent-soft);
+}
+.entry-overlay__enter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.entry-overlay__enter-emblem {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+@keyframes entry-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes entry-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+}
+
+/* 无障碍：减少动效用户直接静态展示（精神保留，不用动效表达） */
+@media (prefers-reduced-motion: reduce) {
+  .entry-overlay,
+  .entry-overlay * {
+    animation: none !important;
+    opacity: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

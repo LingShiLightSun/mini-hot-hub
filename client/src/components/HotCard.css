@@ -3,6 +3,7 @@
 .hot-card {
   display: flex;
   flex-direction: column;
+  min-width: 0; /* grid item 默认 min-width:auto 会把列撑到内容宽度，导致手机端横向滚动；显式 0 允许收缩 */
   min-height: 420px; /* 等高感：每卡至少同高，桌面端并排更整齐 */
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -50,60 +51,85 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 4px;
+  min-width: 0; /* flex 行允许子项收缩，配合 title 链的 min-width:0 杜绝横向溢出 */
+  height: 44px; /* 固定行高以便「已读即隐藏」时 height 可平滑过渡到 0（原内容驱动 ~40px，+4px 更透气） */
+  padding: 0 4px;
   border-radius: 8px; /* 行悬停时圆角底，视觉更柔和 */
   border-bottom: 1px solid var(--border);
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.15s ease, height 0.4s ease, opacity 0.3s ease,
+    border-bottom-color 0.4s ease;
 }
 /* 桌面悬停（仅 hover 设备）：整行温柔亮起（暖奶油底），给人「被看见、被接住」的
    回应感，呼应 PRD「将心注入」。去掉金竖条（与金色徽章抢戏），守克制。 */
 @media (hover: hover) {
   .hot-card__item:hover {
-    background: #FCF4E8; /* 极淡暖奶油底 */
+    background: var(--row-hover);
   }
 }
 .hot-card__item:last-child {
   border-bottom: none;
 }
 
+/* 隐藏渐变：行高收起 + 内容淡出，下方列表自然上升；overflow 保持 visible 以免裁切气泡 */
+.hot-card__item.is-exiting {
+  opacity: 0;
+  height: 0;
+  border-bottom-color: transparent; /* 行高归零时边线同步消失，避免一条悬空的虚线 */
+}
+
+/* 排名标记：3D 超写实（#05）「光泽立体」手法，暖色化——顶部高光 + 饱和体渐变 + 柔和写实投影。
+   主题色模式（TODO-4）：「奶黄 / 绿叶 / 黑夜」是三种可切换颜色模式，名次圆牌颜色由
+   App.css 的 --rank-bg/--rank-fg/--rank-spot 驱动；切换 data-theme 时整组联动，组件不动。 */
+
+/* 排名标记（4~10）：纯数字、无圆牌，回归安静的列表样式 */
 .hot-card__rank {
   flex: 0 0 24px;
   text-align: center;
   font-size: 14px;
   font-weight: 600;
-  color: var(--muted); /* 排名 4 及以后：默认暖灰字列表样式 */
+  line-height: 1;
+  color: var(--muted); /* 暖灰字，跨主题不变 */
 }
 
-/* 排名 1~3：暖金三档递进，呼应全站暖色语言（替代原冷金银铜） */
+/* 排名 1~3：共用同一颗鲜亮奶黄圆牌（光泽 3D 手法），仅数字区分名次 */
 .hot-card__item.is-rank-1 .hot-card__rank,
 .hot-card__item.is-rank-2 .hot-card__rank,
 .hot-card__item.is-rank-3 .hot-card__rank {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-  border-radius: 50%; /* 正圆：宽高相等 */
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 50%; /* 正圆 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  line-height: 1;
+  font-weight: 700;
+  color: var(--rank-fg);
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 44%),
+    var(--rank-bg);
+  box-shadow:
+    0 6px 12px -3px var(--rank-spot),
+    inset 0 1px 1px rgba(255, 255, 255, 0.7);
+  transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.4s cubic-bezier(0.33, 1, 0.68, 1);
 }
-/* 第 1 名：暖金 + 一抹暖玫瑰描边，呼应「将爱注入」（榜首=最受关注=被爱） */
-.hot-card__item.is-rank-1 .hot-card__rank {
-  background: linear-gradient(135deg, #e8b53e 0%, #b07d3b 100%);
-  color: #fffdf8;
-  box-shadow: 0 0 0 2px rgba(227, 166, 166, 0.6);
+/* 灵动感：桌面整行悬停时，前三名徽章轻轻涨大（transform 不影响布局，不挤动标题）；
+   触摸设备无 hover，本就是桌面增强；减少动态偏好下关闭缩放。 */
+@media (hover: hover) {
+  .hot-card__item.is-rank-1:hover .hot-card__rank,
+  .hot-card__item.is-rank-2:hover .hot-card__rank,
+  .hot-card__item.is-rank-3:hover .hot-card__rank {
+    transform: scale(1.14);
+  }
 }
-/* 第 2 名：暖金（深） */
-.hot-card__item.is-rank-2 .hot-card__rank {
-  background: linear-gradient(135deg, #e8c07a 0%, #c99a3f 100%);
-  color: #5a4632;
+@media (prefers-reduced-motion: reduce) {
+  .hot-card__item.is-rank-1:hover .hot-card__rank,
+  .hot-card__item.is-rank-2:hover .hot-card__rank,
+  .hot-card__item.is-rank-3:hover .hot-card__rank {
+    transform: none;
+  }
 }
-/* 第 3 名：暖金（浅/陶） */
-.hot-card__item.is-rank-3 .hot-card__rank {
-  background: linear-gradient(135deg, #ebdaa0 0%, #d9b36b 100%);
-  color: #5a4632;
-}
+
 /* 前三名标题略加深，整体更突出 */
 .hot-card__item.is-rank-1 .hot-card__title-link,
 .hot-card__item.is-rank-2 .hot-card__title-link,
@@ -118,8 +144,15 @@
   }
 }
 
+.hot-card__title-col {
+  flex: 1;
+  min-width: 0;
+  position: relative; /* 气泡绝对定位的新锚点（移到 col：避免 <a> 内嵌 <button> 的语义问题） */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .hot-card__title-link {
-  position: relative; /* 气泡绝对定位的锚点；此处不设 overflow，否则会把上浮的气泡裁掉 */
   flex: 1;
   min-width: 0;
   display: block;
@@ -133,10 +166,10 @@
 .hot-card__title-text {
   display: block;
   min-width: 0;
-  /* 手机端（默认）：自动换行显示完整，避免长标题横向溢出撑宽卡片 */
-  white-space: normal;
-  overflow-wrap: anywhere; /* 超长无空格串（如 B站 标题）也能在任意字符处断行 */
-  word-break: break-word;
+  /* 桌面/手机统一「都一行」：超长标题单行省略，完整内容靠气泡（桌面 hover / 手机点「⋯」）查看 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .hot-card__title-link:hover {
   color: var(--accent);
@@ -173,7 +206,7 @@
 }
 .hot-card__skeleton-rank,
 .hot-card__skeleton-line {
-  background: linear-gradient(90deg, #f1e8d8 25%, #fbf3e6 37%, #f1e8d8 63%); /* 暖米骨架（替代冷紫） */
+  background: linear-gradient(90deg, var(--skeleton-a) 25%, var(--skeleton-b) 37%, var(--skeleton-a) 63%); /* 骨架（随主题） */
   background-size: 400% 100%;
   animation: hot-card-shimmer 1.4s ease infinite;
 }
@@ -205,6 +238,22 @@
 .hot-card__state-msg--empty {
   color: var(--muted);
 }
+.hot-card__state-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+/* 今日已看 40+ 条时的「底线」提示：列表末尾一行调皮小字 */
+.hot-card__list-end {
+  list-style: none;
+  padding: 14px 4px 4px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
 .hot-card__retry {
   border: 1px solid var(--accent);
   background: var(--accent-soft);
@@ -217,7 +266,7 @@
 }
 .hot-card__retry:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 .hot-card__retry:disabled {
   opacity: 0.6;
@@ -247,18 +296,8 @@
   white-space: nowrap;
 }
 
-/* 桌面端（≥720px）：内层文本恢复单行省略（与手机端换行显示完整分开，用户已定方案 a） */
-@media (min-width: 720px) {
-  .hot-card__title-text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    overflow-wrap: normal;
-    word-break: normal;
-  }
-}
-
-/* 桌面奶黄气泡 A：仅标题被省略（is-truncated）且桌面 ≥720px 时，hover/focus 显示完整标题。
+/* 奶黄气泡：仅标题被省略（is-truncated，由 useIsTruncated 检测）时渲染。
+   桌面 hover/focus 显示；手机端由「⋯」按钮点击切换 .is-open 显示（见下方媒体查询）。
    奶黄色系与全站暖色语言一致；原生 title 仅作未溢出兜底，避免双 tooltip。 */
 .hot-card__bubble {
   position: absolute;
@@ -266,20 +305,20 @@
   right: -180px; /* 大幅右溢出 180px：跨过列间距、盖到右侧其他列（B站/知乎），自己表头完全不被遮挡。10px 溢出会被 ~20px 的 grid gap 吸掉，实测等于没溢出，这里直接给足量 */
   max-width: 280px;
   padding: 8px 12px;
-  background: #fbf1cf; /* 奶黄底 */
-  color: #5a4a2e;      /* 深暖棕字 */
-  border: 1px solid rgba(176, 125, 59, 0.25); /* 极淡暖金描边 */
+  background: var(--bubble-bg);
+  color: var(--bubble-fg);
+  border: 1px solid var(--bubble-border);
   border-radius: 10px;
   font-size: 13px;
   line-height: 1.5;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
-  box-shadow: 0 6px 18px rgba(150, 120, 80, 0.18);
+  box-shadow: var(--bubble-shadow);
   opacity: 0;
   visibility: hidden;
   transform: translateY(4px);
-  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  transition: opacity 0.45s ease, transform 0.45s ease, visibility 0.45s;
   z-index: 20;
   pointer-events: none;
 }
@@ -290,17 +329,53 @@
   top: 100%;
   left: 16px;
   border: 6px solid transparent;
-  border-top-color: #fbf1cf;
+  border-top-color: var(--bubble-bg);
 }
-.hot-card__title-link.is-truncated:hover .hot-card__bubble,
-.hot-card__title-link.is-truncated:focus-visible .hot-card__bubble {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+/* 桌面（hover 设备）：整列 hover / 链接键盘聚焦时显示气泡（按钮在桌面隐藏，hover 列≈hover 标题） */
+@media (hover: hover) {
+  .hot-card__title-col:hover .hot-card__bubble,
+  .hot-card__title-link:focus-visible .hot-card__bubble {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
 }
-/* 手机端（<720px）标题自动换行、不溢出，额外保险隐藏气泡，避免误触发 */
+
+/* 标题右侧「⋯」气泡钮：默认隐藏（桌面用 hover），仅手机端（<720px）显示 */
+.hot-card__bubble-btn {
+  flex: 0 0 auto;
+  display: none;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 手机端（<720px）：显示「⋯」钮；点击切换 .is-open 显示气泡；气泡改为贴住标题列右侧、限制在屏内 */
 @media (max-width: 719.98px) {
+  .hot-card__bubble-btn {
+    display: inline-flex;
+  }
   .hot-card__bubble {
-    display: none;
+    right: 0;
+    left: auto;
+    max-width: min(280px, calc(100vw - 32px));
+  }
+  .hot-card__bubble::after {
+    left: auto;
+    right: 8px; /* 小三角指向右侧「⋯」钮 */
+  }
+  .hot-card__bubble.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
   }
 }

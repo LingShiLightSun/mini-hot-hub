@@ -1,0 +1,237 @@
+/* 设置面板：遮罩 + 底部弹出卡片（手机端优先），桌面端居中对话框 */
+
+.settings-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-end; /* 手机端从底部弹出 */
+  justify-content: center;
+  padding: 0;
+  animation: settings-fade 0.2s ease;
+}
+
+.settings-panel {
+  width: 100%;
+  max-width: 460px;
+  max-height: 82vh;
+  overflow-y: auto;
+  background: var(--card-bg);
+  color: var(--text);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  box-shadow: var(--shadow);
+  animation: settings-up 0.25s ease;
+}
+
+/* 桌面端（≥720px）居中为对话框，圆角四周 */
+@media (min-width: 720px) {
+  .settings-mask {
+    align-items: center;
+    padding: 20px;
+  }
+  .settings-panel {
+    border-radius: 20px;
+  }
+}
+
+.settings-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.settings-panel__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+.settings-panel__close {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.2s;
+}
+.settings-panel__close:hover {
+  color: var(--text-h);
+}
+
+.settings-section {
+  margin-top: 6px;
+}
+.settings-section__title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+/* 三主题：并排小卡片，选中项暖金描边 + 浅暖金底 */
+.settings-themes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.settings-theme {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.12s ease;
+}
+.settings-theme.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.settings-theme:active {
+  transform: translateY(1px);
+}
+.settings-theme__icon {
+  width: 26px;
+  height: 26px;
+  color: var(--accent);
+}
+.settings-theme__label {
+  font-weight: 600;
+  color: var(--text-h);
+}
+.settings-theme__desc {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* 「更多」区：浏览垃圾桶（今日浏览记录，已落地）/ 投喂金句（TODO-8 预留） */
+.settings-soon {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.settings-soon__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 4px;
+  border-bottom: 1px dashed var(--border);
+  color: var(--text);
+  font-size: 14px;
+}
+.settings-soon__item:last-child {
+  border-bottom: none;
+}
+/* 可点击项（浏览垃圾桶）：整行可点，手指友好；作为「记录列表」的顶，保留底部分隔线 */
+.settings-soon__item--btn {
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+  border-bottom: 1px dashed var(--border);
+}
+.settings-soon__item--btn:active {
+  background: var(--row-hover);
+}
+.settings-soon__tag {
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.8;
+}
+/* 记录列表之后的「投喂金句」行与上方拉开一点距离 */
+.settings-soon--after-records {
+  margin-top: 8px;
+}
+
+/* 今日浏览记录（垃圾桶）：独立的背景色块+细边，作为「以浏览垃圾桶为顶」的子单元；
+   从上方滑出（像从垃圾桶行往下弹出），而非自下而上滑入。 */
+.settings-records {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 12px 10px;
+  margin: 8px 4px 8px;
+  animation: settings-down 0.28s ease;
+}
+.settings-records__empty {
+  margin: 0;
+  padding: 14px 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.settings-records__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.settings-records__row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 9px 4px;
+  border-bottom: 1px dashed var(--border);
+}
+.settings-records__row:last-child {
+  border-bottom: none;
+}
+.settings-records__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 记录可跳转：保持正文色与无下划线，hover 转强调色 */
+.settings-records__title[href] {
+  text-decoration: none;
+}
+.settings-records__title[href]:hover {
+  color: var(--accent);
+}
+.settings-records__meta {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.settings-records__hint {
+  margin: 10px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+@keyframes settings-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes settings-up {
+  from { transform: translateY(16px); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes settings-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-mask,
+  .settings-panel {
+    animation: none;
+  }
+}

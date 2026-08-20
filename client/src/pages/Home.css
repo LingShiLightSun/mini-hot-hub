@@ -45,6 +45,36 @@
   font-size: 14px;
   transition: all 0.2s;
 }
+
+/* 顶栏右侧操作区：设置齿轮 + 刷新 */
+.home-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.home-settings {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+}
+.home-settings:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* 设置按钮内的主题符号（暖阳/新芽/月亮）跟随按钮色，限定尺寸 */
+.home-settings svg {
+  width: 19px;
+  height: 19px;
+}
 .home-refresh:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
@@ -98,4 +128,12 @@
   font-weight: 600;
   letter-spacing: 2px;
   color: var(--accent);
+}
+
+/* 手机端：禁止横向滚动（只允许上下滑）。clip 不生成滚动容器、不影响纵向滚动，
+   也不裁剪桌面端向右溢出的气泡（桌面端不受此媒体查询约束）。 */
+@media (max-width: 719.98px) {
+  .home-grid {
+    overflow-x: clip;
+  }
 }

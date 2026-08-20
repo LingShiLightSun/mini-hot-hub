@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 在首屏绘制前应用主题，避免主题切换时的白屏闪烁（FOUC） -->
+    <script>
+      try {
+        var t = localStorage.getItem('mini-hot-hub:theme');
+        if (t) document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    </script>
+    <title>迷你今日热榜</title>
+    <script type="module" crossorigin src="/assets/index-CEDTyj5l.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DSRkTXDE.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

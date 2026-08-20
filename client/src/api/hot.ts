@@ -7,7 +7,9 @@
 // - 严格「不回退 Mock」：任一平台拉取失败 / 结构异常 → 返回 error 态
 //   （HotPlatform.error=true + 温柔 message），由 HotCard 以错误态呈现。
 // - 归一化逻辑从后端 services/*.js 平移到此处：取 list → 按热度数值降序排序 →
-//   截 10 条 → 重排 rank 1..n → 包成 { source, sourceName, listName, items }。
+//   截足量条数（uapis.cn 单平台约 50 条，保留用于「已读即隐藏」后的第 11 名补位）→
+//   重排 rank 1..n → 包成 { source, sourceName, listName, items }。
+// - 卡片层（HotCard）再做「过滤已读 + 取满 10 条 + 重编号」展示，真实排名只在数据层保留。
 
 import type { HotPlatform, Source } from '../types/hot'
 
@@ -33,7 +35,8 @@ export const PLATFORM_SOURCES: { source: Source; sourceName: string }[] = (
   Object.keys(SOURCE_META) as Source[]
 ).map((source) => ({ source, sourceName: SOURCE_META[source].sourceName }))
 
-const ITEM_LIMIT = 10
+// 数据层保留足量条目：卡片「已读即隐藏」后需要后面的名次补位（第 11 名及以后）
+const ITEM_LIMIT = 50
 
 /** 把原始热度格式化为「万/亿」可读串（对齐后端 formatHeat 行为） */
 function formatHeat(raw: unknown): string {
@@ -51,7 +54,7 @@ function formatHeat(raw: unknown): string {
   return String(n)
 }
 
-/** 按原始热度数值降序排序 + 截 10 + 重排 rank（对齐后端 sortByHeatDesc 行为） */
+/** 按原始热度数值降序排序 + 截足量 + 重排 rank（展示位次由卡片层重编号） */
 function sortByHeatDesc(
   items: { title: string; heat: string; url: string; _heatRaw: number }[],
 ): { rank: number; title: string; heat: string; url: string }[] {

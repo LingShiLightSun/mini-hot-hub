@@ -1,18 +1,152 @@
 /* 治愈风基础变量 — 全局，供 Home / HotCard 等组件复用（后续可统一到 styles/） */
+
+/* 关掉手机端手指按下时的蓝色高亮方块 + 长按系统菜单（原生 App 般的无干扰手感） */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+/* 手指/鼠标点击产生的焦点框去掉，但保留键盘 Tab 导航的焦点框（无障碍不丢） */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============ 暖黄（默认主题）============
+   依据 PRD 定位「将心注入、将爱注入」：温暖、柔和、低饱和、有呼吸感。
+   可读性以 WCAG AA 为准——正文暖棕 on 奶油底 ≈7:1 达标；摩卡金仅用于大字号/图标/徽章。 */
 :root {
-  /* 暖奶油底 + 摩卡金强调 + 暖珊瑚错误 + 暖玫瑰「爱」点缀
-     依据 PRD 定位「将心注入、将爱注入」：温暖、柔和、低饱和、有呼吸感。
-     可读性以 WCAG AA 为准——正文暖棕 on 奶油底 ≈7:1 达标；摩卡金仅用于大字号/图标/徽章，不作小字正文。 */
   --bg: #fbf6ec;            /* 页面底：暖奶油 */
+  --bg-deep: #f6ecdc;       /* 更深的奶油，用于渐变收尾（入场动画） */
   --card-bg: #fffdf8;       /* 卡片：暖白 */
   --text: #5a4632;          /* 正文：暖棕 */
   --text-h: #3e2f1c;        /* 标题/强调：深暖棕 */
-  --muted: #a8957e;         /* 次要文字：暖灰棕（替代冷灰紫） */
-  --border: #efe6d6;        /* 边框：暖米（替代冷紫） */
+  --muted: #a8957e;         /* 次要文字：暖灰棕 */
+  --border: #efe6d6;        /* 边框：暖米 */
   --accent: #b07d3b;        /* 强调：摩卡金（克制使用） */
   --accent-soft: rgba(176, 125, 59, 0.14);
+  --on-accent: #fffdf8;      /* 强调色填充之上的文字（如重试钮 hover 态） */
   --top: #e0795f;           /* 错误：暖珊瑚（温柔不冰冷） */
-  --love: #e3a6a6;          /* 爱：暖玫瑰（仅克制点缀，如榜首徽章描边） */
+  --love: #e3a6a6;          /* 爱：暖玫瑰（克制点缀，如榜首徽章描边） */
+  --love-shadow: rgba(227, 166, 166, 0.5);
+  --emblem: #e2b155;        /* 入场动画徽记（暖黄=奶黄油心，匹配奶黄色系，替代粉色） */
+  --emblem-shadow: rgba(226, 177, 85, 0.5);
   --radius: 16px;           /* 更柔软的圆角 */
-  --shadow: 0 6px 22px rgba(150, 120, 80, 0.10); /* 暖棕柔影，像卡片落在木桌上 */
+  --shadow: 0 6px 22px rgba(150, 120, 80, 0.10);      /* 暖棕柔影，像卡片落在木桌上 */
+  --shadow-tint: rgba(150, 120, 80, 0.18);            /* 气泡等同轴暖影 */
+
+  /* 交互态底色 */
+  --row-hover: #fcf4e8;      /* 列表行悬停：极淡暖奶油 */
+  --tab-hover: #f5ead9;      /* Tab 悬停：深于页面底，清晰可见 */
+  --tab-active: #efe0c8;     /* Tab 选中：再深一档，层级分明 */
+  --tab-hover-shadow: 0 1px 4px rgba(176, 125, 59, 0.10);
+  --tab-active-shadow: 0 2px 8px rgba(176, 125, 59, 0.18);
+
+  /* 完整标题气泡（奶黄） */
+  --bubble-bg: #fbf1cf;
+  --bubble-fg: #5a4a2e;
+  --bubble-border: rgba(176, 125, 59, 0.25);
+  --bubble-shadow: 0 6px 18px rgba(150, 120, 80, 0.18);
+
+  /* 骨架屏 */
+  --skeleton-a: #f1e8d8;
+  --skeleton-b: #fbf3e6;
+
+  /* 名次圆牌（奶黄模式：1/2/3 同款鲜亮奶黄） */
+  --rank-bg: linear-gradient(160deg, #fff0a6 0%, #fbd35e 46%, #e9b53f 100%);
+  --rank-fg: #6b4e16;
+  --rank-spot: rgba(233, 181, 63, 0.55);
+}
+
+/* ============ 浅绿（鲜亮草绿·生机，2026-08-20 用户拍板 B 方向）============ */
+:root[data-theme='green'] {
+  --bg: #eaf6e2;
+  --bg-deep: #dff0d3;
+  --card-bg: #f8fcf4;
+  --text: #36432f;
+  --text-h: #243024;
+  --muted: #718a6d;
+  --border: #d6e8cd;
+  --accent: #4c9e3f;        /* 鲜亮草绿强调 */
+  --accent-soft: rgba(76, 158, 63, 0.14);
+  --on-accent: #f8fcf4;
+  --top: #d9785f;
+  --love: #c9a6b0;
+  --love-shadow: rgba(201, 166, 176, 0.5);
+  --emblem: #5cb53e;        /* 入场动画徽记（浅绿=新芽绿） */
+  --emblem-shadow: rgba(92, 181, 62, 0.5);
+  --shadow: 0 6px 22px rgba(70, 110, 55, 0.14);
+  --shadow-tint: rgba(70, 110, 55, 0.20);
+
+  --row-hover: #e4f2d9;
+  --tab-hover: #ddeecf;
+  --tab-active: #cfe5bd;
+  --tab-hover-shadow: 0 1px 4px rgba(76, 158, 63, 0.10);
+  --tab-active-shadow: 0 2px 8px rgba(76, 158, 63, 0.18);
+
+  --bubble-bg: #ecf7e2;
+  --bubble-fg: #36432f;
+  --bubble-border: rgba(76, 158, 63, 0.28);
+  --bubble-shadow: 0 6px 18px rgba(60, 100, 50, 0.18);
+
+  --skeleton-a: #dcebd0;
+  --skeleton-b: #eff8e6;
+
+  --rank-bg: linear-gradient(160deg, #cdeea8 0%, #8fd45e 46%, #5fb83f 100%); /* 鲜亮草绿名次牌 */
+  --rank-fg: #274d16;
+  --rank-spot: rgba(95, 184, 63, 0.55);
+}
+
+/* ============ 深黑（暗色护眼）============
+   守 P5 包容：正文用暖带灰的浅色（非纯白，避免刺眼），对比度达标；
+   强调色在暗底上提亮为暖金；color-scheme 切 dark 让滚动条/控件自适应。 */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #1c1c22;
+  --bg-deep: #16161b;
+  --card-bg: #25252d;
+  --text: #d8d2c7;
+  --text-h: #f3eee4;
+  --muted: #9a9389;
+  --border: #34343d;
+  --accent: #d8b46a;        /* 暗底上的暖金强调 */
+  --accent-soft: rgba(216, 180, 106, 0.16);
+  --on-accent: #1c1c22;
+  --top: #e8917a;
+  --love: #e3a6a6;
+  --love-shadow: rgba(227, 166, 166, 0.4);
+  --emblem: #d8b46a;        /* 入场动画徽记（夜色=暖金弦月，呼应夜色暖金强调） */
+  --emblem-shadow: rgba(216, 180, 106, 0.45);
+  --shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  --shadow-tint: rgba(0, 0, 0, 0.45);
+
+  --row-hover: #2e2e37;
+  --tab-hover: #2c2c35;
+  --tab-active: #383842;
+  --tab-hover-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --tab-active-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+
+  --bubble-bg: #33333d;
+  --bubble-fg: #e8e2d6;
+  --bubble-border: rgba(216, 180, 106, 0.3);
+  --bubble-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+
+  --skeleton-a: #2c2c34;
+  --skeleton-b: #383842;
+
+  --rank-bg: linear-gradient(160deg, #9a9ab4 0%, #5e5e78 46%, #34344a 100%); /* 月亮/夜色 */
+  --rank-fg: #f3f0ff;
+  --rank-spot: rgba(120, 120, 150, 0.5);
+}
+
+/* 主题切换时整站柔和过渡（尊重减少动态偏好时关闭） */
+@media (prefers-reduced-motion: no-preference) {
+  body,
+  .home,
+  .hot-card,
+  .home-refresh,
+  .tab-bar__item,
+  .hot-card__bubble,
+  .entry-overlay {
+    transition: background-color 0.3s ease, color 0.3s ease,
+      border-color 0.3s ease, box-shadow 0.3s ease;
+  }
 }

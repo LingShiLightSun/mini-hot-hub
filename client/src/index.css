@@ -4,8 +4,8 @@
     'Microsoft YaHei', sans-serif;
   line-height: 1.6;
   color-scheme: light;
-  background: #fbf6ec;
-  color: #5a4632;
+  background: var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
