@@ -44,14 +44,14 @@ const MOON_PATH =
 // 入场徽记 + 话语：随主题切换（暖黄=心+将心注入；浅绿=新芽+扎根；深黑=月亮+初心）
 const EMBLEMS: Record<string, { path: string; text: string }> = {
   warm: { path: HEART_PATH, text: '将心注入·将爱注入' },
-  green: { path: SPROUT_PATH, text: '我们不做大事 我们只会扎根' },
+  green: { path: SPROUT_PATH, text: '我们不做大事·我们只会扎根' },
   dark: { path: MOON_PATH, text: '曾经初心依旧炙热\n庆幸自己未曾退缩' },
 }
 
-/** 当前主题对应的话语（页脚复用：把入场两行话语拼成一行） */
+/** 当前主题对应的话语（页脚复用：入场两行话语用「·」拼成一行） */
 export function getMotto(theme: string): string {
   const m = EMBLEMS[theme] ?? EMBLEMS.warm
-  return m.text.replace(/\n/g, ' ')
+  return m.text.replace(/\n/g, '·')
 }
 
 export default function EntryOverlay({ theme, onEnter }: { theme: string; onEnter: () => void }) {

@@ -10,6 +10,10 @@
   justify-content: center;
   padding: 0;
   animation: settings-fade 0.2s ease;
+  transition: opacity 0.24s ease; /* 关闭时渐隐 */
+}
+.settings-mask.is-leaving {
+  opacity: 0;
 }
 
 .settings-panel {
@@ -23,6 +27,11 @@
   padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
   box-shadow: var(--shadow);
   animation: settings-up 0.25s ease;
+  transition: transform 0.24s ease, opacity 0.24s ease; /* 关闭时轻轻下沉 + 淡出 */
+}
+.settings-panel.is-leaving {
+  transform: translateY(16px);
+  opacity: 0;
 }
 
 /* 桌面端（≥720px）居中为对话框，圆角四周 */
@@ -152,15 +161,18 @@
   margin-top: 8px;
 }
 
-/* 今日浏览记录（垃圾桶）：独立的背景色块+细边，作为「以浏览垃圾桶为顶」的子单元；
-   从上方滑出（像从垃圾桶行往下弹出），而非自下而上滑入。 */
+/* 今日浏览记录（垃圾桶）：外层做「高度 0→实际高度」滑出过渡，不撑跳面板；
+   内层是独立背景色块+细边，作为「以浏览垃圾桶为顶」的子单元 */
+.settings-records-wrap {
+  overflow: hidden;
+  transition: height 0.35s ease;
+}
 .settings-records {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 6px 12px 10px;
   margin: 8px 4px 8px;
-  animation: settings-down 0.28s ease;
 }
 .settings-records__empty {
   margin: 0;
@@ -224,14 +236,12 @@
   from { transform: translateY(16px); opacity: 0.6; }
   to { transform: translateY(0); opacity: 1; }
 }
-@keyframes settings-down {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .settings-mask,
-  .settings-panel {
+  .settings-panel,
+  .settings-records-wrap {
     animation: none;
+    transition: none;
   }
 }

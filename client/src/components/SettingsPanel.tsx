@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { SPROUT_PATH } from './EntryOverlay'
 import type { ReadRecord } from '../hooks/useReadHistory'
 import './SettingsPanel.css'
@@ -42,11 +42,36 @@ export default function SettingsPanel({
   records: ReadRecord[]
 }) {
   const [binOpen, setBinOpen] = useState(false)
+  // 垃圾桶记录区：height 0 → 实际高度过渡，让记录「滑出来」而非突然撑大面板
+  const recordsWrapRef = useRef<HTMLDivElement>(null)
+  const [recordsH, setRecordsH] = useState(0)
+  useLayoutEffect(() => {
+    if (!binOpen) {
+      setRecordsH(0)
+      return
+    }
+    const el = recordsWrapRef.current
+    if (el) setRecordsH(el.scrollHeight)
+  }, [binOpen])
+  // 关闭面板：先播渐隐再卸载（点 × / 点遮罩都走这里）
+  const [leaving, setLeaving] = useState(false)
+  const closeTimerRef = useRef<number | null>(null)
+  const requestClose = () => {
+    if (leaving) return
+    setLeaving(true)
+    closeTimerRef.current = window.setTimeout(onClose, 240) // 与 is-leaving 过渡时长一致
+  }
+  useLayoutEffect(
+    () => () => {
+      if (closeTimerRef.current !== null) clearTimeout(closeTimerRef.current)
+    },
+    [],
+  )
 
   return (
-    <div className="settings-mask" onClick={onClose}>
+    <div className={leaving ? 'settings-mask is-leaving' : 'settings-mask'} onClick={requestClose}>
       <div
-        className="settings-panel"
+        className={leaving ? 'settings-panel is-leaving' : 'settings-panel'}
         role="dialog"
         aria-modal="true"
         aria-label="设置"
@@ -54,7 +79,7 @@ export default function SettingsPanel({
       >
         <div className="settings-panel__head">
           <h2 className="settings-panel__title">设置</h2>
-          <button className="settings-panel__close" aria-label="关闭" onClick={onClose}>
+          <button className="settings-panel__close" aria-label="关闭" onClick={requestClose}>
             ×
           </button>
         </div>
@@ -92,7 +117,12 @@ export default function SettingsPanel({
               </span>
             </li>
           </ul>
-          {binOpen && (
+          <div
+            className="settings-records-wrap"
+            ref={recordsWrapRef}
+            style={{ height: binOpen ? recordsH : 0 }}
+            aria-hidden={!binOpen}
+          >
             <div className="settings-records">
               {records.length === 0 ? (
                 <p className="settings-records__empty">今天还没浏览过热点～</p>
@@ -123,7 +153,7 @@ export default function SettingsPanel({
                 看完就翻篇啦，明天 00:00 自动清零
               </p>
             </div>
-          )}
+          </div>
           <ul className="settings-soon settings-soon--after-records">
             <li className="settings-soon__item">
               <span>投喂金句</span>

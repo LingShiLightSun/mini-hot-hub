@@ -98,6 +98,8 @@ export default function Home() {
   const [showEntry, setShowEntry] = useState(shouldShowEntry)
   const [theme, setTheme] = useState<ThemeKey>(readTheme)
   const [showSettings, setShowSettings] = useState(false)
+  // 全局唯一气泡：跨三平台共享，同一时刻最多一个（在某个平台点亮后，去另一平台点出会自动收起前一个）
+  const [activeBubble, setActiveBubble] = useState<string | null>(null)
 
   // 点击热点 = 已读：写入今日记录（该条从榜上消失；已读即隐藏，无撤销）
   const handleRead = useCallback(
@@ -143,6 +145,24 @@ export default function Home() {
     })
     return () => cancelAnimationFrame(id)
   }, [platforms.length])
+
+  // 全局气泡收起：点标题链接本身不收（那是要切换/点亮气泡的点击），点其它任意处或按 Esc 收起
+  useEffect(() => {
+    if (activeBubble === null) return
+    const onDoc = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('.hot-card__title-link')) return
+      setActiveBubble(null)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setActiveBubble(null)
+    }
+    document.addEventListener('click', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('click', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [activeBubble])
 
   const tabs: TabItem[] = [
     { key: 'all', label: '全部' },
@@ -208,6 +228,8 @@ export default function Home() {
               onRetry={() => retrySource(s.source)}
               hiddenUrls={hidden}
               onRead={(item) => handleRead(item, s.sourceName)}
+              activeBubble={activeBubble}
+              onBubbleChange={setActiveBubble}
             />
           )
         })}

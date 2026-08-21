@@ -56,7 +56,7 @@
   padding: 0 4px;
   border-radius: 8px; /* 行悬停时圆角底，视觉更柔和 */
   border-bottom: 1px solid var(--border);
-  transition: background 0.15s ease, height 0.4s ease, opacity 0.3s ease,
+  transition: background 0.15s ease, opacity 0.3s ease,
     border-bottom-color 0.4s ease;
 }
 /* 桌面悬停（仅 hover 设备）：整行温柔亮起（暖奶油底），给人「被看见、被接住」的
@@ -68,13 +68,6 @@
 }
 .hot-card__item:last-child {
   border-bottom: none;
-}
-
-/* 隐藏渐变：行高收起 + 内容淡出，下方列表自然上升；overflow 保持 visible 以免裁切气泡 */
-.hot-card__item.is-exiting {
-  opacity: 0;
-  height: 0;
-  border-bottom-color: transparent; /* 行高归零时边线同步消失，避免一条悬空的虚线 */
 }
 
 /* 排名标记：3D 超写实（#05）「光泽立体」手法，暖色化——顶部高光 + 饱和体渐变 + 柔和写实投影。
@@ -106,11 +99,11 @@
   font-weight: 700;
   color: var(--rank-fg);
   background:
-    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 44%),
+    radial-gradient(circle at 50% 22%, var(--rank-glow) 0%, rgba(255, 255, 255, 0) 44%),
     var(--rank-bg);
   box-shadow:
     0 6px 12px -3px var(--rank-spot),
-    inset 0 1px 1px rgba(255, 255, 255, 0.7);
+    inset 0 1px 1px var(--rank-glow-inset);
   transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.4s cubic-bezier(0.33, 1, 0.68, 1);
 }
 /* 灵动感：桌面整行悬停时，前三名徽章轻轻涨大（transform 不影响布局，不挤动标题）；
@@ -127,6 +120,12 @@
   .hot-card__item.is-rank-2:hover .hot-card__rank,
   .hot-card__item.is-rank-3:hover .hot-card__rank {
     transform: none;
+  }
+}
+/* 减少动效偏好：气泡不做弹跳动画（直接显隐） */
+@media (prefers-reduced-motion: reduce) {
+  .hot-card__bubble {
+    animation: none !important;
   }
 }
 
@@ -297,7 +296,7 @@
 }
 
 /* 奶黄气泡：仅标题被省略（is-truncated，由 useIsTruncated 检测）时渲染。
-   桌面 hover/focus 显示；手机端由「⋯」按钮点击切换 .is-open 显示（见下方媒体查询）。
+   桌面 hover/focus 显示；手机端由点标题切换 .is-open 显示（见下方媒体查询）。
    奶黄色系与全站暖色语言一致；原生 title 仅作未溢出兜底，避免双 tooltip。 */
 .hot-card__bubble {
   position: absolute;
@@ -322,60 +321,52 @@
   z-index: 20;
   pointer-events: none;
 }
-/* 小三角翻回左下，指向标题文字：气泡虽大幅右溢出，但和标题之间仍有视觉连接 */
+/* 小三角翻回左下，指向标题文字：用旋转 45° 的小方块（右下两边描边）做出完整、均匀的箭头边框，
+   与气泡本体边框同色同源，不再有「一边有、一边没有」的残缺感。方块半埋进气泡底，露出的下半部即箭头。 */
 .hot-card__bubble::after {
   content: '';
   position: absolute;
   top: 100%;
   left: 16px;
-  border: 6px solid transparent;
-  border-top-color: var(--bubble-bg);
+  width: 10px;
+  height: 10px;
+  background: var(--bubble-bg);
+  border-right: 1px solid var(--bubble-border);
+  border-bottom: 1px solid var(--bubble-border);
+  transform: translateY(-50%) rotate(45deg);
 }
-/* 桌面（hover 设备）：整列 hover / 链接键盘聚焦时显示气泡（按钮在桌面隐藏，hover 列≈hover 标题） */
+/* 桌面（hover 设备）：整列 hover / 链接键盘聚焦时显示气泡（按钮在桌面隐藏，hover 列≈hover 标题）。
+   bubble-pop 动画让气泡「弹」出来：back-out 贝塞尔带轻微过冲，灵动不突兀；退出走基础 transition 淡出 */
 @media (hover: hover) {
   .hot-card__title-col:hover .hot-card__bubble,
   .hot-card__title-link:focus-visible .hot-card__bubble {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+    animation: bubble-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 }
-
-/* 标题右侧「⋯」气泡钮：默认隐藏（桌面用 hover），仅手机端（<720px）显示 */
-.hot-card__bubble-btn {
-  flex: 0 0 auto;
-  display: none;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--muted);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
+@keyframes bubble-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* 手机端（<720px）：显示「⋯」钮；点击切换 .is-open 显示气泡；气泡改为贴住标题列右侧、限制在屏内 */
+/* 手机端（<720px）：长标题点一下标题即可点亮气泡（不再使用单独的「⋯」按钮，避免和标题末尾的「…」叠成两个省略号）；
+   气泡贴住标题列右侧、限制在屏内。小三角指向标题起始处，视觉上仍「接住」标题。 */
 @media (max-width: 719.98px) {
-  .hot-card__bubble-btn {
-    display: inline-flex;
-  }
   .hot-card__bubble {
     right: 0;
     left: auto;
     max-width: min(280px, calc(100vw - 32px));
   }
   .hot-card__bubble::after {
-    left: auto;
-    right: 8px; /* 小三角指向右侧「⋯」钮 */
+    left: 16px; /* 小三角指向标题起始，而非原「⋯」钮所在的右侧 */
+    right: auto;
   }
   .hot-card__bubble.is-open {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+    animation: bubble-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 }

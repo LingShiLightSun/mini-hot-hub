@@ -54,6 +54,9 @@
   --rank-bg: linear-gradient(160deg, #fff0a6 0%, #fbd35e 46%, #e9b53f 100%);
   --rank-fg: #6b4e16;
   --rank-spot: rgba(233, 181, 63, 0.55);
+  /* 圆牌白高光（径向 + 顶部内阴影）：默认饱和底色压暗字，高光可亮；暗色模式压低防糊字 */
+  --rank-glow: rgba(255, 255, 255, 0.9);
+  --rank-glow-inset: rgba(255, 255, 255, 0.7);
 }
 
 /* ============ 浅绿（鲜亮草绿·生机，2026-08-20 用户拍板 B 方向）============ */
@@ -132,20 +135,23 @@
   --skeleton-a: #2c2c34;
   --skeleton-b: #383842;
 
-  --rank-bg: linear-gradient(160deg, #9a9ab4 0%, #5e5e78 46%, #34344a 100%); /* 月亮/夜色 */
+  --rank-bg: linear-gradient(160deg, #5a5a74 0%, #3e3e54 46%, #26263a 100%); /* 月亮/夜色：压暗底色，避免浅字糊进高光 */
   --rank-fg: #f3f0ff;
   --rank-spot: rgba(120, 120, 150, 0.5);
+  /* 暗色模式：白高光从「刺眼」降到「微光」，消除数字与反光重叠 */
+  --rank-glow: rgba(255, 255, 255, 0.22);
+  --rank-glow-inset: rgba(255, 255, 255, 0.22);
 }
 
-/* 主题切换时整站柔和过渡（尊重减少动态偏好时关闭） */
+/* 主题切换时整站柔和过渡（尊重减少动态偏好时关闭）。
+   注意：.hot-card__bubble / .entry-overlay 不在此列——它们有各自的 opacity/transform
+   过渡（气泡显隐、入场退场），放这里会被整站覆盖而失效，造成「突然出现/消失」。 */
 @media (prefers-reduced-motion: no-preference) {
   body,
   .home,
   .hot-card,
   .home-refresh,
-  .tab-bar__item,
-  .hot-card__bubble,
-  .entry-overlay {
+  .tab-bar__item {
     transition: background-color 0.3s ease, color 0.3s ease,
       border-color 0.3s ease, box-shadow 0.3s ease;
   }

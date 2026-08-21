@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react'
 import type { HotPlatform, HotItem } from '../types/hot'
 import { useIsTruncated } from '../hooks/useIsTruncated'
 import './HotCard.css'
@@ -36,6 +36,10 @@ interface HotCardProps {
   hiddenUrls?: ReadonlySet<string>
   /** 用户点击标题链接触发（= 已读，记录并隐藏） */
   onRead?: (item: HotItem) => void
+  /** 全局唯一激活气泡的复合键（sourceKey::id）；跨平台共享，同一时刻最多一个 */
+  activeBubble?: string | null
+  /** 切换/关闭全局气泡 */
+  onBubbleChange?: (v: string | null) => void
 }
 
 /** 条目唯一标识：优先链接，空链接回退标题（隐藏/过滤/气泡互斥共用） */
@@ -88,47 +92,48 @@ function HotCardSkeleton() {
 }
 
 /**
- * 单条热榜条目：桌面端标题被省略时，hover/focus 显示自定义奶黄气泡（完整标题）。
- * 仅当该条标题真正溢出（is-truncated）才显示气泡；未溢出时保留原生 title 作为兜底，避免双 tooltip。
+ * 单条热榜条目：标题被省略时提供「完整标题气泡」。
+ * - 桌面（hover 设备）：hover/focus 显示气泡；未溢出时保留原生 title 兜底，避免双 tooltip。
+ * - 手机（无 hover）：长标题改用「两次点击」——第一次点亮气泡预览，第二次才进入界面（见 handleLinkClick）。
  */
 function HotItem({
   item,
+  dataKey,
   isOpen,
   onToggle,
   onRead,
 }: {
   item: HotItem
+  dataKey: string
   isOpen: boolean
   onToggle: () => void
   onRead?: (item: HotItem) => void
 }) {
   const { ref, isTruncated } = useIsTruncated<HTMLSpanElement>()
-  const [exiting, setExiting] = useState(false)
-  const exitTimerRef = useRef<number | null>(null)
-  useEffect(
-    () => () => {
-      if (exitTimerRef.current !== null) clearTimeout(exitTimerRef.current)
-    },
-    [],
-  )
 
-  // 点击标题：先播一段渐隐+收起动画，再真正调 onRead 让父级隐藏
-  // （新标签页已立刻打开，此处只管当前列表的视觉过渡）
-  const handleLinkClick = () => {
-    if (exiting) return
-    setExiting(true)
-    exitTimerRef.current = window.setTimeout(() => {
-      onRead?.(item)
-    }, 420) // 与 CSS height 0.4s 留 20ms 余量，避免动画末尾抖动
+  // 点击标题：
+  // - 桌面（hover 设备）：hover 时已预览过气泡，点击即「进入界面」并标记已读隐藏。
+  // - 手机（无 hover）：长标题改用「两次点击」——第一次点亮气泡预览，第二次才进入界面。
+  //   这样不再需要标题右侧那个「⋯」按钮（否则会和末尾 CSS 截断的「…」叠成两个省略号，手机端很冲突），
+  //   也回到了最早的交互设想。短标题无需预览，一次点击直接进入。
+  // 已读隐藏后，列表补位由 ReadList 的 FLIP 动画接手（平滑上移 + 第 11 名滑入），不再做 height 收缩。
+  const handleLinkClick = (e: ReactMouseEvent<HTMLAnchorElement>) => {
+    const isTouch = window.matchMedia('(hover: none)').matches
+    if (isTouch && isTruncated && !isOpen) {
+      e.preventDefault() // 第一次只预览，不跳转、不标记已读
+      onToggle()
+      return
+    }
+    // 进入界面（新标签已立刻打开）；已读隐藏交给父级，列表用 FLIP 平滑补位
+    onRead?.(item)
   }
 
   return (
     <li
       className={
-        item.rank <= 3
-          ? `hot-card__item is-rank-${item.rank}${exiting ? ' is-exiting' : ''}`
-          : `hot-card__item${exiting ? ' is-exiting' : ''}`
+        item.rank <= 3 ? `hot-card__item is-rank-${item.rank}` : 'hot-card__item'
       }
+      data-key={dataKey}
     >
       <span className="hot-card__rank">{item.rank}</span>
       <div className="hot-card__title-col">
@@ -142,6 +147,8 @@ function HotItem({
           target="_blank"
           rel="noreferrer"
           title={isTruncated ? undefined : item.title}
+          aria-expanded={isTruncated ? isOpen : undefined}
+          onMouseDown={(e) => e.preventDefault()} /* 阻止点击抢焦点引发的页面滚动（"跳到标题"的来源），键盘 Tab 聚焦不受影响 */
           onClick={handleLinkClick}
         >
           <span className="hot-card__title-text" ref={ref}>
@@ -149,29 +156,14 @@ function HotItem({
           </span>
         </a>
         {isTruncated && (
-          <>
-            <button
-              type="button"
-              className="hot-card__bubble-btn"
-              aria-label="展开完整标题"
-              aria-expanded={isOpen}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onToggle()
-              }}
-            >
-              <span aria-hidden="true">⋯</span>
-            </button>
-            <span
-              className={
-                isOpen ? 'hot-card__bubble is-open' : 'hot-card__bubble'
-              }
-              role="tooltip"
-            >
-              {item.title}
-            </span>
-          </>
+          <span
+            className={
+              isOpen ? 'hot-card__bubble is-open' : 'hot-card__bubble'
+            }
+            role="tooltip"
+          >
+            {item.title}
+          </span>
         )}
       </div>
       {item.heat && <span className="hot-card__heat">{item.heat}</span>}
@@ -180,18 +172,25 @@ function HotItem({
 }
 
 /** 可见列表：过滤已读(隐藏) → 取满 10 条 → 重编号（数字=当前可见榜序号，永远 1-10 无空号）。
- *  该榜今日已看 40+ 条（约等于底线）时，列表底部浮现「我也是有底线哒～」 */
+ *  该榜今日已看 40+ 条（约等于底线）时，列表底部浮现「我也是有底线哒～」
+ *
+ * 气泡状态（activeBubble）由 Home 持有，跨三平台共享——同一时刻全局只有一个气泡；
+ * 在某个平台点亮气泡后，去另一平台点出气泡，前一个会自动收起（人眼一次只看一个）。
+ * 已读隐藏后，用 FLIP（Web Animations API）让剩余条目平滑上移、第 11 名轻轻滑入，
+ * 不再做 height 收缩，避免「列表先变短再变长」的突兀感。 */
 function ReadList({
   items,
+  sourceKey,
   hiddenUrls,
-  openUrl,
-  setOpenUrl,
+  activeBubble,
+  onBubbleChange,
   onRead,
 }: {
   items: HotItem[]
+  sourceKey: string
   hiddenUrls?: ReadonlySet<string>
-  openUrl: string | null
-  setOpenUrl: (v: string | null) => void
+  activeBubble: string | null
+  onBubbleChange: (v: string | null) => void
   onRead?: (item: HotItem) => void
 }) {
   const hiddenCount = hiddenUrls
@@ -201,6 +200,50 @@ function ReadList({
     .filter((it) => !hiddenUrls?.has(identityOf(it)))
     .slice(0, 10)
     .map((it, i) => ({ ...it, rank: i + 1 }))
+
+  // FLIP：列表因已读隐藏而重排时，对位移的条目做 translateY 补间，新进入的第 11 名从下方淡入。
+  const listRef = useRef<HTMLOListElement>(null)
+  const prevPos = useRef<Map<string, number>>(new Map())
+  const firstRun = useRef(true)
+  useLayoutEffect(() => {
+    const ul = listRef.current
+    if (!ul) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // 用「相对列表容器」的 top，而非视口 top：这样页面滚动（如点击标题时浏览器的焦点滚动）
+    // 不会污染位移差，避免所有条目被当成「重排」一起滑动（之前「乱滑一会」的根因）。
+    const listTop = ul.getBoundingClientRect().top
+    const nodes = Array.from(ul.querySelectorAll<HTMLElement>('.hot-card__item'))
+    const next = new Map<string, number>()
+    for (const n of nodes) {
+      const key = n.dataset.key as string
+      const top = n.getBoundingClientRect().top - listTop
+      next.set(key, top)
+      if (firstRun.current || reduce) continue
+      const prev = prevPos.current.get(key)
+      if (prev == null) {
+        // 新进入（如第 11 名补位）：从下方轻轻滑入
+        n.animate(
+          [
+            { transform: 'translateY(12px)', opacity: 0.35 },
+            { transform: 'translateY(0)', opacity: 1 },
+          ],
+          { duration: 360, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' },
+        )
+      } else if (prev !== top) {
+        // 已存在条目：从旧位置滑到新位置
+        const dy = prev - top
+        n.animate(
+          [
+            { transform: `translateY(${dy}px)` },
+            { transform: 'translateY(0)' },
+          ],
+          { duration: 360, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' },
+        )
+      }
+    }
+    firstRun.current = false
+    prevPos.current = next
+  }, [visible])
 
   if (visible.length === 0) {
     return (
@@ -214,15 +257,19 @@ function ReadList({
   }
 
   return (
-    <ol className="hot-card__list">
+    <ol className="hot-card__list" ref={listRef}>
       {visible.map((item) => {
         const id = identityOf(item)
+        const bubbleKey = `${sourceKey}::${id}`
         return (
           <HotItem
             key={id}
+            dataKey={bubbleKey}
             item={item}
-            isOpen={openUrl === id}
-            onToggle={() => setOpenUrl(openUrl === id ? null : id)}
+            isOpen={activeBubble === bubbleKey}
+            onToggle={() =>
+              onBubbleChange(activeBubble === bubbleKey ? null : bubbleKey)
+            }
             onRead={onRead}
           />
         )
@@ -245,28 +292,10 @@ export default function HotCard({
   sourceName,
   hiddenUrls,
   onRead,
+  activeBubble,
+  onBubbleChange,
 }: HotCardProps) {
-  const [openUrl, setOpenUrl] = useState<string | null>(null)
   const rawName = data?.sourceName ?? sourceName ?? '热榜'
-
-  // 单一气泡互斥：同一时间只让一个标题被「看见、被接住」（将心注入——一次只专注一件事）。
-  // 点其它「⋯」/ 点卡片外任意处 / 按 Esc 都会关闭当前气泡。
-  useEffect(() => {
-    if (openUrl === null) return
-    const onDoc = (e: MouseEvent) => {
-      if ((e.target as HTMLElement).closest('.hot-card__bubble-btn')) return
-      setOpenUrl(null)
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpenUrl(null)
-    }
-    document.addEventListener('click', onDoc)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('click', onDoc)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [openUrl])
   const name = SOURCE_DISPLAY[rawName] ?? rawName
   const meta =
     PLATFORM_META[rawName] ?? { initial: name.slice(0, 1), color: '#B07D3B' }
@@ -304,9 +333,10 @@ export default function HotCard({
         data.items.length > 0 ? (
           <ReadList
             items={data.items}
+            sourceKey={rawName}
             hiddenUrls={hiddenUrls}
-            openUrl={openUrl}
-            setOpenUrl={setOpenUrl}
+            activeBubble={activeBubble ?? null}
+            onBubbleChange={onBubbleChange ?? (() => {})}
             onRead={onRead}
           />
         ) : (
