@@ -28,7 +28,8 @@ function formatTime(t: number): string {
 
 /**
  * 设置面板：主题为当前落地功能；「更多」区——浏览垃圾桶（TODO-5 已落地：今日浏览记录，
- * 只存档不还原，自然日自动清空）；投喂金句（TODO-8，规划中）
+ * 只存档不还原，自然日自动清空）；平台拓展坞、关于网站~（后续）。
+ * 添加金句（TODO-8，规划中）暂不入目录展示，但功能仍需做。
  */
 export default function SettingsPanel({
   theme,
@@ -85,7 +86,10 @@ export default function SettingsPanel({
         </div>
 
         <section className="settings-section">
-          <h3 className="settings-section__title">主题</h3>
+          <div className="settings-section__head">
+            <h3 className="settings-section__title">主题</h3>
+            <p className="settings-section__hint">都很护眼哦，选一个自己喜欢的吧~</p>
+          </div>
           <div className="settings-themes">
             {THEMES.map((t) => (
               <button
@@ -156,7 +160,11 @@ export default function SettingsPanel({
           </div>
           <ul className="settings-soon settings-soon--after-records">
             <li className="settings-soon__item">
-              <span>投喂金句</span>
+              <span>平台拓展坞</span>
+              <span className="settings-soon__tag">规划中</span>
+            </li>
+            <li className="settings-soon__item">
+              <span>关于网站~</span>
               <span className="settings-soon__tag">规划中</span>
             </li>
           </ul>

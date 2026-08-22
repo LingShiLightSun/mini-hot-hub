@@ -1,20 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { getQuoteAt } from '../data/dailyQuotes'
+import { useEffect, useRef, useState } from 'react'
 import './EntryOverlay.css'
 
 const ENTRY_KEY = 'mini-hot-hub:last-entry'
 const ENTRY_GAP_MS = 60 * 60 * 1000 // 距上次打开 > 1h 才展示开场（高频访问不打扰）
 
+// 🔧 测试模式开关：true = 每次刷新都展示开场动画（方便查看效果）。
+// 用户说"退出测试模式"时改为 false，下方真实「1H 间隔」逻辑即生效。
+const ENTRY_TEST_MODE = true
+
 // 每次打开都刷新「上次访问时间」；距上次超过间隔才需要开场
 export function shouldShowEntry(): boolean {
-  // 🔧 临时测试模式（2026-08-19）：为方便反复查看开场动画，暂时忽略「1H 间隔」策略，每次都展示。
-  // ⚠️ 正式使用前必须恢复下方注释掉的逻辑，否则每次打开都会播开场。
-  // 下面两处 void 仅为让 tsc 认为常量仍被读取（noUnusedLocals），恢复时随注释块一起删除。
-  void ENTRY_KEY
-  void ENTRY_GAP_MS
-  return true
-
-  /*
+  if (ENTRY_TEST_MODE) return true
   try {
     const last = Number(localStorage.getItem(ENTRY_KEY) || 0)
     const now = Date.now()
@@ -23,7 +19,6 @@ export function shouldShowEntry(): boolean {
   } catch {
     return false // 隐私模式等无法读写 → 不展示，避免打扰
   }
-  */
 }
 
 const REDUCED =
@@ -54,10 +49,17 @@ export function getMotto(theme: string): string {
   return m.text.replace(/\n/g, '·')
 }
 
-export default function EntryOverlay({ theme, onEnter }: { theme: string; onEnter: () => void }) {
+export default function EntryOverlay({
+  theme,
+  quote,
+  onEnter,
+}: {
+  theme: string
+  quote: string
+  onEnter: () => void
+}) {
   const [shown, setShown] = useState(false)
   const [leaving, setLeaving] = useState(false)
-  const quote = useMemo(() => getQuoteAt(Date.now()), [])
   const emblem = EMBLEMS[theme] ?? EMBLEMS.warm
 
   // 挂载后下一帧再开 opacity，让「进场淡入」走 transition（而非 animation），退场才不会被 fill-mode 压住

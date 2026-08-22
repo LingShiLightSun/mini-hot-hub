@@ -94,3 +94,14 @@ export function getQuoteAt(ts: number): string {
   const pos = bucket % len // 这一圈里的第几句
   return seededShuffle(QUOTES, lap)[pos]
 }
+
+// 金句漂流瓶的 banner 轮换：内置库 + 用户投的句子「均匀混合、不加权」一起转。
+// 用户句改变时，下一时间桶自动纳入——无需额外刷新。
+export function getRotatingQuoteAt(ts: number, userQuotes: string[] = []): string {
+  const pool = userQuotes.length ? [...QUOTES, ...userQuotes] : QUOTES
+  const len = pool.length
+  const bucket = Math.floor(ts / BUCKET_MS)
+  const lap = Math.floor(bucket / len)
+  const pos = bucket % len
+  return seededShuffle(pool, lap)[pos]
+}

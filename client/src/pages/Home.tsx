@@ -7,7 +7,9 @@ import { useHotList } from '../hooks/useHotList'
 import { useReadHistory } from '../hooks/useReadHistory'
 import { PLATFORM_SOURCES } from '../api/hot'
 import type { HotItem } from '../types/hot'
-import { getQuoteAt } from '../data/dailyQuotes'
+import { getRotatingQuoteAt } from '../data/dailyQuotes'
+import { getUserQuotes } from '../data/quoteStore'
+import QuoteBottle from '../components/QuoteBottle'
 import './Home.css'
 
 /** 主题持久化键（与 index.html 内联脚本、SettingsPanel 共用） */
@@ -59,11 +61,12 @@ function clearScroll() {
   } catch {}
 }
 
-// 每 10 分钟一轮的淡入淡出旋转金句：窗口内稳定、跨窗口自动换、每圈重洗不循环
+// 每 10 分钟一轮的淡入淡出旋转金句：窗口内稳定、跨窗口自动换、每圈重洗不循环。
+// 金句漂流瓶接入后，内置库 + 用户投的句子一起「均匀混合、不加权」轮换。
 function useRotatingQuote() {
   const quoteRef = useRef('')
   const [quote, setQuote] = useState(() => {
-    const q = getQuoteAt(Date.now())
+    const q = getRotatingQuoteAt(Date.now(), getUserQuotes())
     quoteRef.current = q
     return q
   })
@@ -72,7 +75,7 @@ function useRotatingQuote() {
   useEffect(() => {
     let fadeTimer: ReturnType<typeof setTimeout> | undefined
     const interval = setInterval(() => {
-      const next = getQuoteAt(Date.now())
+      const next = getRotatingQuoteAt(Date.now(), getUserQuotes())
       if (next === quoteRef.current) return
       setVisible(false) // 轻轻淡出
       fadeTimer = setTimeout(() => {
@@ -100,6 +103,14 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false)
   // 全局唯一气泡：跨三平台共享，同一时刻最多一个（在某个平台点亮后，去另一平台点出会自动收起前一个）
   const [activeBubble, setActiveBubble] = useState<string | null>(null)
+
+  // 金句漂流瓶（隐藏款彩蛋）：点 banner 金句文字即弹出，无其它常驻入口
+  const [bottleOpen, setBottleOpen] = useState(false)
+  const [bottleQuote, setBottleQuote] = useState('')
+  const openBottle = (q: string) => {
+    setBottleQuote(q)
+    setBottleOpen(true)
+  }
 
   // 点击热点 = 已读：写入今日记录（该条从榜上消失；已读即隐藏，无撤销）
   const handleRead = useCallback(
@@ -175,7 +186,7 @@ export default function Home() {
 
   return (
     <>
-      {showEntry && <EntryOverlay theme={theme} onEnter={() => setShowEntry(false)} />}
+      {showEntry && <EntryOverlay theme={theme} quote={quote} onEnter={() => setShowEntry(false)} />}
       {showSettings && (
         <SettingsPanel
           theme={theme}
@@ -184,13 +195,23 @@ export default function Home() {
           records={records}
         />
       )}
+      {bottleOpen && (
+        <QuoteBottle quote={bottleQuote} onClose={() => setBottleOpen(false)} />
+      )}
       <div className="home">
       {/* 顶栏：站名 + 一句话介绍 + 设置 + 刷新 */}
       <header className="home-header">
         <div className="home-brand">
           <h1 className="home-title">迷你今日热榜</h1>
           <p className={`home-intro${visible ? '' : ' home-intro--fading'}`}>
-            {quote}
+            <button
+              type="button"
+              className="home-intro__quote"
+              onClick={() => openBottle(quote)}
+              title="点一下，看看这只金句漂流瓶~"
+            >
+              {quote}
+            </button>
           </p>
         </div>
         <div className="home-actions">

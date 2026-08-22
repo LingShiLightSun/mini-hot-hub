@@ -74,12 +74,25 @@
 .settings-section {
   margin-top: 6px;
 }
-.settings-section__title {
+.settings-section__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   margin: 0 0 10px;
+}
+.settings-section__title {
+  margin: 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--muted);
   letter-spacing: 1px;
+}
+.settings-section__hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+  opacity: 0.4; /* 若隐若现：极淡，仅余余晖 */
 }
 
 /* 三主题：并排小卡片，选中项暖金描边 + 浅暖金底 */
